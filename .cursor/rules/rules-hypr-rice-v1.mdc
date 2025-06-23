@@ -1,0 +1,41 @@
+---
+description: Hypr-Ricer
+globs: 
+alwaysApply: false
+---
+Instructions for Cursor AI
+
+
+
+
+
+Generate the full codebase, including all modules, GUI, plugins, and documentation.
+
+
+
+Use modern Python practices (type hints, docstrings, PEP 8).
+
+
+
+Include detailed comments for Hyprland-specific logic and Wayland interactions.
+
+
+
+Validate code for syntax, logical correctness, and Wayland compatibility.
+
+
+
+Provide sample config snippets (e.g., hyprland.conf, waybar/config) in the docs.
+
+
+
+Include installation instructions for all dependencies.
+
+
+Output the project as a zip file or GitHub repository link.
+
+
+
+Ensure the tool is intuitive for beginners yet powerful for advanced users.
+
+This HyprRice tool should be the definitive solution for ricing the Hyprland ecosystem, offering unparalleled customization and integration for a polished desktop experience.
