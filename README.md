@@ -2,10 +2,16 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
 [![Wayland](https://img.shields.io/badge/Wayland-Compatible-brightgreen.svg)](https://wayland.freedesktop.org/)
+[![CI](https://github.com/DuckyOnQuack-999/HyprRice/actions/workflows/python-ci.yml/badge.svg)](https://github.com/DuckyOnQuack-999/HyprRice/actions/workflows/python-ci.yml)
 
 HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland compositor ecosystem. It provides a seamless, user-friendly GUI to customize every aspect of Hyprland and its associated tools, including animations, Waybar, Rofi, window opacities, notifications, clipboard managers, and more.
+
+## 📚 Documentation
+- [User Guide](docs/user_guide.md)
+- [Troubleshooting](docs/howto/troubleshooting.md)
+- [Quick Start](docs/tutorials/quick_start.md)
 
 ## 🌟 Features
 
@@ -34,7 +40,14 @@ HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland c
 
 ## 📦 Installation
 
-### Prerequisites
+### Install from the AUR (Arch Linux)
+HyprRice is available on the AUR as `hyprrice`:
+```sh
+yay -S hyprrice
+```
+Or use your favorite AUR helper.
+
+### Prerequisites (Manual Install)
 
 Ensure you have the following system dependencies installed:
 
@@ -52,12 +65,12 @@ sudo dnf install hyprland waybar rofi dunst swww grim slurp cliphist hyprlock \
     python3-qt5 python3-pillow python3-pyyaml python3-gobject
 ```
 
-### Install HyprRice
+### Install HyprRice (Manual)
 
 #### Option 1: From Source
 ```bash
-git clone https://github.com/yourusername/hyprrice.git
-cd hyprrice
+git clone https://github.com/DuckyOnQuack-999/HyprRice.git
+cd HyprRice
 pip install -e .
 ```
 
@@ -66,27 +79,9 @@ pip install -e .
 pip install hyprrice
 ```
 
-#### Option 3: AUR (Arch Linux)
-```bash
-yay -S hyprrice
-```
-
 ## 🚀 Quick Start
 
-1. **Launch HyprRice**:
-   ```bash
-   hyprrice
-   ```
-
-2. **First Time Setup**:
-   - Follow the welcome wizard
-   - Choose your preferred preset (minimal, cyberpunk, pastel)
-   - Configure basic settings
-
-3. **Customize Your Desktop**:
-   - Navigate through tabs to customize different components
-   - Use live preview to see changes instantly
-   - Save themes for later use
+See the [Quick Start Guide](docs/tutorials/quick_start.md) or the [User Guide](docs/user_guide.md) for detailed instructions.
 
 ## 🎨 Usage Examples
 
@@ -236,64 +231,17 @@ pytest tests/test_gui.py
 ```
 
 ## 🤝 Contributing
-
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-### Development Setup
-```bash
-git clone https://github.com/yourusername/hyprrice.git
-cd hyprrice
-pip install -e ".[dev]"
-pre-commit install
-```
-
-## 📚 Documentation
-
-- [User Guide](docs/user_guide.md) - Detailed feature documentation
-- [Developer Guide](docs/developer_guide.md) - Code structure and plugin development
-- [Plugin Guide](docs/plugin_guide.md) - Creating custom plugins
-- [API Reference](docs/api_reference.md) - Technical documentation
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **HyprRice not starting**:
-   ```bash
-   # Check dependencies
-   hyprrice --check-deps
-   
-   # View logs
-   tail -f ~/.hyprrice/logs/hyprrice.log
-   ```
-
-2. **Config not applying**:
-   ```bash
-   # Reload Hyprland
-   hyprctl reload
-   
-   # Check config syntax
-   hyprctl --batch "keyword monitor eDP-1,1920x1080@60"
-   ```
-
-3. **Waybar not updating**:
-   ```bash
-   # Restart Waybar
-   pkill waybar && waybar &
-   ```
-
-### Debug Mode
-```bash
-hyprrice --debug
-```
+AUR PKGBUILD contributions are welcome!
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL-2.0 License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
@@ -304,7 +252,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/yourusername/hyprrice/issues)
+- **GitHub Issues**: [Report bugs and request features](https://github.com/DuckyOnQuack-999/HyprRice/issues)
 - **Discord**: Join our community server
 - **Documentation**: Check the [docs](docs/) folder
 - **Wiki**: Community-maintained guides and tips
