@@ -1,6 +1,17 @@
 # HyprRice Documentation
 
+[![Python CI](https://github.com/DuckyOnQuack-999/HyprRice/actions/workflows/python-ci.yml/badge.svg)](https://github.com/DuckyOnQuack-999/HyprRice/actions/workflows/python-ci.yml)
+
 Welcome to the HyprRice documentation! This guide will help you navigate the available documentation resources.
+
+## Table of Contents
+- [Core Documentation](#core-documentation)
+- [Tutorials](#tutorials)
+- [Reference](#reference)
+- [How-To Guides](#how-to-guides)
+- [Development](#development)
+- [Examples](#examples)
+- [Style Guide](#style-guide)
 
 ## 📚 Core Documentation
 
@@ -36,4 +47,12 @@ Welcome to the HyprRice documentation! This guide will help you navigate the ava
 
 - [Example Themes](../themes/) - Pre-installed themes
 - [Example Plugins](examples/plugins/) - Sample plugin implementations
-- [Configuration Examples](examples/configs/) - Common configuration patterns 
+- [Configuration Examples](examples/configs/) - Common configuration patterns
+
+## 📝 Style Guide
+
+- [Documentation & Code Style Guide](STYLE_GUIDE.md)
+
+---
+
+For more, see the [main repository](https://github.com/DuckyOnQuack-999/HyprRice) and the [README](../README.md). 
