@@ -1,0 +1,31 @@
+# Core GUI Framework
+PyQt5>=5.15.0
+PyQt5-Qt5>=5.15.0
+PyQt5-sip>=12.8.0
+
+# Configuration and Data Handling
+PyYAML>=6.0
+configparser>=5.0.0
+
+# Image Processing for Previews
+Pillow>=9.0.0
+
+# System Integration
+psutil>=5.8.0
+pydbus>=0.6.0
+
+# Development and Testing
+pytest>=7.0.0
+pytest-qt>=4.0.0
+pytest-cov>=4.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=1.0.0
+
+# Optional: GTK Alternative
+# PyGObject>=3.42.0
+
+# Optional: Additional Features
+requests>=2.28.0  # For theme downloads
+colorama>=0.4.5   # For terminal colors
+rich>=12.0.0      # For enhanced terminal output 
