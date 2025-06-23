@@ -1,0 +1,22 @@
+pkgbase = hyprrice
+	pkgdesc = Comprehensive Hyprland Ecosystem Ricing Tool (PyQt5 GUI, themes, plugins, backup, and more)
+	pkgver = 1.0.0
+	pkgrel = 1
+	url = https://github.com/DuckyOnQuack-999/HyprRice
+	arch = any
+	license = GPL2
+	makedepends = python-setuptools
+	depends = python
+	depends = python-pyqt5
+	depends = python-pyyaml
+	depends = python-pillow
+	depends = python-psutil
+	depends = python-pydbus
+	depends = python-configparser
+	depends = python-requests
+	depends = python-colorama
+	depends = python-rich
+	source = hyprrice-1.0.0.tar.gz::https://github.com/DuckyOnQuack-999/HyprRice/archive/refs/tags/v1.0.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = hyprrice
