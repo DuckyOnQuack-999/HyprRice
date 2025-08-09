@@ -196,10 +196,26 @@ class HyprRiceGUI(QMainWindow):
         self.plugins_tab = PluginsTab(self.config, self.plugin_manager, self)
         self.tab_widget.addTab(self.plugins_tab, "Plugins")
         
-        # Connect signals
-        for tab in [self.hyprland_tab, self.waybar_tab, self.rofi_tab,
-                   self.notifications_tab, self.clipboard_tab, self.lockscreen_tab]:
-            tab.config_changed.connect(self.on_config_changed)
+        # Connect signals - FIXED VERSION
+        signal_connected_tabs = [
+            self.hyprland_tab, self.waybar_tab, self.rofi_tab,
+            self.notifications_tab, self.clipboard_tab, self.lockscreen_tab,
+            self.themes_tab, self.settings_tab  # Added missing tabs
+        ]
+        
+        for tab in signal_connected_tabs:
+            if hasattr(tab, 'config_changed'):
+                tab.config_changed.connect(self.on_config_changed)
+            if hasattr(tab, 'preview_update_requested'):
+                tab.preview_update_requested.connect(self.update_preview)
+        
+        # Connect theme manager signals
+        if hasattr(self.theme_manager, 'theme_applied'):
+            self.theme_manager.theme_applied.connect(self.on_theme_applied)
+        
+        # Connect plugin manager signals
+        if hasattr(self.plugin_manager, 'plugin_loaded'):
+            self.plugin_manager.plugin_loaded.connect(self.on_plugin_loaded)
         
         # Add tooltips to tabs
         self.tab_widget.setTabToolTip(0, "Configure Hyprland core settings.")
@@ -345,13 +361,68 @@ class HyprRiceGUI(QMainWindow):
             self.tab_widget.setCurrentIndex(tab_mapping[item_text])
     
     def on_config_changed(self):
-        """Handle configuration changes."""
-        self.config_changed.emit()
-        self.status_label.setText("Configuration modified")
-        
-        # Auto-save if enabled
-        if self.config.gui.auto_save:
-            self.auto_save()
+        """Handle configuration changes from tabs."""
+        try:
+            # Save configuration
+            self.config.save()
+            
+            # Update preview if available
+            if self.preview_window:
+                self.preview_window.schedule_update()
+            
+            # Emit application-level signal
+            self.config_changed.emit()
+            
+            # Update status bar
+            self.status_label.setText("Configuration updated")
+            
+            # Dispatch plugin events
+            self.plugin_manager.dispatch_event('on_config_changed', {
+                'config': self.config,
+                'timestamp': __import__('time').time()
+            })
+            
+            # Auto-save if enabled
+            if self.config.gui.auto_save:
+                self.auto_save()
+                
+        except Exception as e:
+            self.logger.error(f"Failed to handle config change: {e}")
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Configuration Error", 
+                              f"Failed to save configuration: {e}")
+
+    def on_theme_applied(self, theme_name):
+        """Handle theme application."""
+        try:
+            self.theme_applied.emit(theme_name)
+            self.status_label.setText(f"Theme '{theme_name}' applied")
+            
+            # Update preview
+            if self.preview_window:
+                self.preview_window.update_preview()
+                
+            # Dispatch plugin event
+            self.plugin_manager.dispatch_event('after_theme_change', {
+                'theme_name': theme_name,
+                'config': self.config
+            })
+            
+        except Exception as e:
+            self.logger.error(f"Failed to handle theme application: {e}")
+
+    def on_plugin_loaded(self, plugin_name):
+        """Handle plugin loading."""
+        try:
+            self.status_label.setText(f"Plugin '{plugin_name}' loaded")
+            self.logger.info(f"Plugin loaded: {plugin_name}")
+        except Exception as e:
+            self.logger.error(f"Failed to handle plugin loading: {e}")
+
+    def update_preview(self):
+        """Update the preview window."""
+        if self.preview_window:
+            self.preview_window.update_preview()
     
     def auto_save(self):
         """Auto-save configuration."""
