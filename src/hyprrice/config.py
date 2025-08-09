@@ -5,7 +5,7 @@ Configuration management for HyprRice
 import os
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from .exceptions import ConfigError
 
@@ -106,6 +106,35 @@ class NotificationConfig:
 
 
 @dataclass
+class ClipboardConfig:
+    """Clipboard manager configuration."""
+    manager: str = "cliphist"  # cliphist, wl-clipboard, clipman
+    history_size: int = 100
+    max_item_size: int = 1024  # KB
+    enable_images: bool = True
+    enable_primary_selection: bool = True
+    persist_history: bool = True
+    exclude_patterns: List[str] = field(default_factory=lambda: ["password", "secret"])
+
+
+@dataclass
+class LockscreenConfig:
+    """Lockscreen configuration."""
+    locker: str = "hyprlock"  # hyprlock, swaylock
+    background_type: str = "image"  # image, color, blur
+    background_path: str = ""
+    background_color: str = "#000000"
+    timeout: int = 300  # seconds
+    grace_period: int = 5  # seconds
+    show_failed_attempts: bool = True
+    keyboard_layout: str = "us"
+    input_field_color: str = "#ffffff"
+    text_color: str = "#ffffff"
+    font_family: str = "JetBrainsMono Nerd Font"
+    font_size: int = 14
+
+
+@dataclass
 class Config:
     """Main configuration class."""
     general: GeneralConfig = field(default_factory=GeneralConfig)
@@ -115,6 +144,8 @@ class Config:
     waybar: WaybarConfig = field(default_factory=WaybarConfig)
     rofi: RofiConfig = field(default_factory=RofiConfig)
     notifications: NotificationConfig = field(default_factory=NotificationConfig)
+    clipboard: ClipboardConfig = field(default_factory=ClipboardConfig)
+    lockscreen: LockscreenConfig = field(default_factory=LockscreenConfig)
     
     def __post_init__(self):
         """Expand paths after initialization."""
@@ -175,6 +206,8 @@ class Config:
             'waybar': self.waybar.__dict__,
             'rofi': self.rofi.__dict__,
             'notifications': self.notifications.__dict__,
+            'clipboard': self.clipboard.__dict__,
+            'lockscreen': self.lockscreen.__dict__,
         }
     
     @classmethod
@@ -217,6 +250,16 @@ class Config:
                 if hasattr(config.notifications, key):
                     setattr(config.notifications, key, value)
         
+        if 'clipboard' in data:
+            for key, value in data['clipboard'].items():
+                if hasattr(config.clipboard, key):
+                    setattr(config.clipboard, key, value)
+        
+        if 'lockscreen' in data:
+            for key, value in data['lockscreen'].items():
+                if hasattr(config.lockscreen, key):
+                    setattr(config.lockscreen, key, value)
+        
         config._expand_paths()
         return config
     
@@ -247,5 +290,19 @@ class Config:
         
         if self.hyprland.gaps_in < 0 or self.hyprland.gaps_out < 0:
             raise ConfigError("Gaps must be non-negative")
+        
+        # Validate clipboard settings
+        if self.clipboard.history_size <= 0:
+            raise ConfigError("Clipboard history size must be positive")
+        
+        if self.clipboard.max_item_size <= 0:
+            raise ConfigError("Clipboard max item size must be positive")
+        
+        # Validate lockscreen settings
+        if self.lockscreen.timeout < 0:
+            raise ConfigError("Lockscreen timeout must be non-negative")
+        
+        if self.lockscreen.grace_period < 0:
+            raise ConfigError("Grace period must be non-negative")
         
         return True 
