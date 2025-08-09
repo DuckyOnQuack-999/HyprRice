@@ -1,1 +1,695 @@
- 
+# HyprRice Theme: Cyberpunk
+# A neon-inspired theme with dark backgrounds and bright accent colors
+
+metadata:
+  name: "Cyberpunk"
+  version: "1.0.0"
+  author: "HyprRice Team"
+  description: "A neon-inspired cyberpunk theme with electric blues and purples"
+  tags: ["dark", "neon", "cyberpunk", "futuristic"]
+
+# Hyprland Configuration
+hyprland:
+  general:
+    gaps_in: 8
+    gaps_out: 16
+    border_size: 2
+    col.active_border: "rgba(33ccffee) rgba(00ff99ee) 45deg"
+    col.inactive_border: "rgba(595959aa)"
+    resize_on_border: false
+    allow_tearing: false
+    layout: "dwindle"
+
+  decoration:
+    rounding: 10
+    blur:
+      enabled: true
+      size: 8
+      passes: 3
+      new_optimizations: true
+      noise: 0.0117
+      contrast: 0.8916
+      brightness: 0.8172
+    drop_shadow: true
+    shadow_range: 4
+    shadow_render_power: 3
+    col.shadow: "rgba(1a1a1aee)"
+
+  animations:
+    enabled: true
+    bezier:
+      - "myBezier, 0.05, 0.9, 0.1, 1.05"
+      - "linear, 0.0, 0.0, 1.0, 1.0"
+      - "wind, 0.05, 0.9, 0.1, 1.05"
+      - "winIn, 0.1, 1.1, 0.1, 1.1"
+      - "winOut, 0.3, -0.3, 0, 1"
+      - "slow, 0, 0.85, 0.3, 1"
+      - "overshot, 0.13, 0.99, 0.29, 1.1"
+    animation:
+      - "windows, 1, 6, wind, slide"
+      - "windowsIn, 1, 6, winIn, slide"
+      - "windowsOut, 1, 5, winOut, slide"
+      - "windowsMove, 1, 5, wind, slide"
+      - "border, 1, 10, linear"
+      - "borderangle, 1, 30, linear, loop"
+      - "fade, 1, 10, overshot"
+      - "workspaces, 1, 5, wind"
+
+# Waybar Configuration
+waybar:
+  layer: "top"
+  position: "top"
+  height: 30
+  spacing: 4
+  output: ["*"]
+  
+  modules-left: ["hyprland/workspaces", "hyprland/mode", "hyprland/scratchpad", "custom/media"]
+  modules-center: ["hyprland/window"]
+  modules-right: ["mpd", "idle_inhibitor", "pulseaudio", "network", "cpu", "memory", "temperature", "backlight", "keyboard-state", "sway/language", "battery", "clock", "tray"]
+
+  style: |
+    * {
+        border: none;
+        border-radius: 0;
+        font-family: "JetBrainsMono Nerd Font";
+        font-size: 13px;
+        min-height: 0;
+    }
+
+    window#waybar {
+        background-color: rgba(26, 27, 38, 0.9);
+        border-bottom: 3px solid rgba(51, 204, 255, 0.8);
+        color: #ffffff;
+        transition-property: background-color;
+        transition-duration: .5s;
+    }
+
+    button {
+        box-shadow: inset 0 -3px transparent;
+        border: none;
+        border-radius: 0;
+    }
+
+    #workspaces button {
+        padding: 0 5px;
+        background-color: transparent;
+        color: #ffffff;
+    }
+
+    #workspaces button:hover {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    #workspaces button.focused {
+        background-color: #64727D;
+        box-shadow: inset 0 -3px #ffffff;
+    }
+
+    #workspaces button.urgent {
+        background-color: #eb4d4b;
+    }
+
+    #mode {
+        background-color: #64727D;
+        border-bottom: 3px solid #ffffff;
+    }
+
+    #clock,
+    #battery,
+    #cpu,
+    #memory,
+    #disk,
+    #temperature,
+    #backlight,
+    #network,
+    #pulseaudio,
+    #wireplumber,
+    #custom-media,
+    #tray,
+    #mode,
+    #idle_inhibitor,
+    #scratchpad,
+    #mpd {
+        padding: 0 10px;
+        color: #ffffff;
+        background-color: rgba(68, 71, 90, 0.8);
+        margin: 3px 0px 3px 0px;
+        border-radius: 3px;
+    }
+
+    #window,
+    #workspaces {
+        margin: 0 4px;
+    }
+
+    .modules-left > widget:first-child > #workspaces {
+        margin-left: 0;
+    }
+
+    .modules-right > widget:last-child > #workspaces {
+        margin-right: 0;
+    }
+
+    #clock {
+        background-color: rgba(51, 204, 255, 0.8);
+        color: #000000;
+        font-weight: bold;
+    }
+
+    #battery {
+        background-color: rgba(0, 255, 153, 0.8);
+        color: #000000;
+    }
+
+    #battery.charging, #battery.plugged {
+        color: #000000;
+        background-color: rgba(0, 255, 153, 0.8);
+    }
+
+    @keyframes blink {
+        to {
+            background-color: #ffffff;
+            color: #000000;
+        }
+    }
+
+    #battery.critical:not(.charging) {
+        background-color: #f53c3c;
+        color: #ffffff;
+        animation-name: blink;
+        animation-duration: 0.5s;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+    }
+
+    label:focus {
+        background-color: #000000;
+    }
+
+    #cpu {
+        background-color: rgba(255, 0, 255, 0.8);
+        color: #000000;
+    }
+
+    #memory {
+        background-color: rgba(255, 255, 0, 0.8);
+        color: #000000;
+    }
+
+    #disk {
+        background-color: #964B00;
+    }
+
+    #backlight {
+        background-color: #90b1b1;
+    }
+
+    #network {
+        background-color: rgba(0, 255, 255, 0.8);
+        color: #000000;
+    }
+
+    #network.disconnected {
+        background-color: #f53c3c;
+    }
+
+    #pulseaudio {
+        background-color: rgba(255, 128, 0, 0.8);
+        color: #000000;
+    }
+
+    #pulseaudio.muted {
+        background-color: #90b1b1;
+        color: #2a5c45;
+    }
+
+    #temperature {
+        background-color: rgba(255, 102, 102, 0.8);
+        color: #000000;
+    }
+
+    #temperature.critical {
+        background-color: #eb4d4b;
+    }
+
+    #tray {
+        background-color: rgba(68, 71, 90, 0.8);
+    }
+
+    #tray > .passive {
+        -gtk-icon-effect: dim;
+    }
+
+    #tray > .needs-attention {
+        -gtk-icon-effect: highlight;
+        background-color: #eb4d4b;
+    }
+
+    #idle_inhibitor {
+        background-color: #2d3748;
+    }
+
+    #idle_inhibitor.activated {
+        background-color: #ecf0f1;
+        color: #2d3748;
+    }
+
+    #mpd {
+        background-color: #66cc99;
+        color: #2a5c45;
+    }
+
+    #mpd.disconnected {
+        background-color: #f53c3c;
+    }
+
+    #mpd.stopped {
+        background-color: #90b1b1;
+    }
+
+    #mpd.paused {
+        background-color: #51a37a;
+    }
+
+    #language {
+        background: #00b093;
+        color: #740864;
+        padding: 0 5px;
+        margin: 0 5px;
+        min-width: 16px;
+    }
+
+    #keyboard-state {
+        background: #97e1ad;
+        color: #000000;
+        padding: 0 0px;
+        margin: 0 5px;
+        min-width: 16px;
+    }
+
+    #keyboard-state > label {
+        padding: 0 5px;
+    }
+
+    #keyboard-state > label.locked {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    #scratchpad {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    #scratchpad.empty {
+        background-color: transparent;
+    }
+
+# Rofi Configuration
+rofi:
+  configuration:
+    modi: "window,run,ssh,drun"
+    width: 50
+    lines: 15
+    columns: 1
+    font: "JetBrainsMono Nerd Font 12"
+    location: 0
+    yoffset: 0
+    xoffset: 0
+    fixed-num-lines: true
+    show-icons: true
+    terminal: "kitty"
+    ssh-client: "ssh"
+    ssh-command: "{terminal} -e {ssh-client} {host} [-p {port}]"
+    run-command: "{cmd}"
+    run-list-command: ""
+    run-shell-command: "{terminal} -e {cmd}"
+    window-command: "wmctrl -i -R {window}"
+    window-match-fields: "all"
+    icon-theme: "Oranchelo"
+    drun-match-fields: "name,generic,exec,categories"
+    drun-show-actions: false
+    drun-display-format: "{icon} {name}"
+    disable-history: false
+    ignored-prefixes: ""
+    sort: false
+    sorting-method: "normal"
+    case-sensitive: false
+    cycle: true
+    sidebar-mode: false
+    eh: 1
+    auto-select: false
+    parse-hosts: false
+    parse-known-hosts: true
+    combi-modi: "window,drun,ssh"
+    matching: "normal"
+    tokenize: true
+    m: "-5"
+    line-margin: 2
+    line-padding: 1
+    filter: ""
+    separator-style: "none"
+    hide-scrollbar: false
+    fullscreen: false
+    fake-transparency: false
+    dpi: -1
+    threads: 0
+    scrollbar-width: 8
+    scroll-method: 0
+    fake-background: "screenshot"
+    window-format: "{w}    {c}   {t}"
+    click-to-exit: true
+    show-match: true
+    color-normal: ""
+    color-urgent: ""
+    color-active: ""
+    color-window: ""
+    max-history-size: 25
+    combi-hide-mode-prefix: false
+    matching-negate-char: "-"
+    cache-dir: "default"
+    pid: "/run/user/1000/rofi.pid"
+    display-window: ""
+    display-windowcd: ""
+    display-run: ""
+    display-ssh: ""
+    display-drun: ""
+    display-combi: ""
+    display-keys: ""
+    kb-primary-paste: "Control+V,Shift+Insert"
+    kb-secondary-paste: "Control+v,Insert"
+
+  theme: |
+    /*****----- Configuration -----*****/
+    configuration {
+        modi:                       "drun,run,filebrowser,window";
+        show-icons:                 true;
+        display-drun:               "APPS";
+        display-run:                "RUN";
+        display-filebrowser:        "FILES";
+        display-window:             "WINDOW";
+        drun-display-format:        "{name} [<span weight='light' size='small'><i>({generic})</i></span>]";
+        window-format:              "{w} · {c} · {t}";
+    }
+
+    /*****----- Global Properties -----*****/
+    @import                          "shared/colors.rasi"
+    @import                          "shared/fonts.rasi"
+
+    * {
+        border-colour:               var(selected);
+        handle-colour:               var(selected);
+        background-colour:           var(background);
+        foreground-colour:           var(foreground);
+        alternate-background:        var(background-alt);
+        normal-background:           var(background);
+        normal-foreground:           var(foreground);
+        urgent-background:           var(urgent);
+        urgent-foreground:           var(background);
+        active-background:           var(active);
+        active-foreground:           var(background);
+        selected-normal-background:  var(selected);
+        selected-normal-foreground:  var(background);
+        selected-urgent-background:  var(active);
+        selected-urgent-foreground:  var(background);
+        selected-active-background:  var(urgent);
+        selected-active-foreground:  var(background);
+        alternate-normal-background: var(background);
+        alternate-normal-foreground: var(foreground);
+        alternate-urgent-background: var(urgent);
+        alternate-urgent-foreground: var(background);
+        alternate-active-background: var(active);
+        alternate-active-foreground: var(background);
+    }
+
+    /*****----- Main Window -----*****/
+    window {
+        transparency:                "real";
+        location:                    center;
+        anchor:                      center;
+        fullscreen:                  false;
+        width:                       800px;
+        x-offset:                    0px;
+        y-offset:                    0px;
+        enabled:                     true;
+        margin:                      0px;
+        padding:                     0px;
+        border:                      2px solid;
+        border-radius:               10px;
+        border-color:                @border-colour;
+        cursor:                      "default";
+        background-color:            @background-colour;
+    }
+
+    /*****----- Main Box -----*****/
+    mainbox {
+        enabled:                     true;
+        spacing:                     10px;
+        margin:                      0px;
+        padding:                     20px;
+        border:                      0px solid;
+        border-radius:               0px 0px 0px 0px;
+        border-color:                @border-colour;
+        background-color:            transparent;
+        children:                    [ "inputbar", "message", "listview" ];
+    }
+
+    /*****----- Inputbar -----*****/
+    inputbar {
+        enabled:                     true;
+        spacing:                     10px;
+        margin:                      0px 0px;
+        padding:                     0px;
+        border:                      0px solid;
+        border-radius:               0px;
+        border-color:                @border-colour;
+        background-color:            transparent;
+        text-color:                  @foreground-colour;
+        children:                    [ "textbox-prompt-colon", "entry", "mode-switcher" ];
+    }
+
+    prompt {
+        enabled:                     true;
+        background-color:            inherit;
+        text-color:                  inherit;
+    }
+    textbox-prompt-colon {
+        enabled:                     true;
+        padding:                     5px 0px;
+        expand:                      false;
+        str:                         "";
+        background-color:            inherit;
+        text-color:                  inherit;
+    }
+    entry {
+        enabled:                     true;
+        padding:                     5px 0px;
+        background-color:            inherit;
+        text-color:                  inherit;
+        cursor:                      text;
+        placeholder:                 "Search...";
+        placeholder-color:           inherit;
+    }
+    num-filtered-rows {
+        enabled:                     true;
+        expand:                      false;
+        background-color:            inherit;
+        text-color:                  inherit;
+    }
+    textbox-num-sep {
+        enabled:                     true;
+        expand:                      false;
+        str:                         "/";
+        background-color:            inherit;
+        text-color:                  inherit;
+    }
+    num-rows {
+        enabled:                     true;
+        expand:                      false;
+        background-color:            inherit;
+        text-color:                  inherit;
+    }
+    case-indicator {
+        enabled:                     true;
+        background-color:            inherit;
+        text-color:                  inherit;
+    }
+
+    /*****----- Listview -----*****/
+    listview {
+        enabled:                     true;
+        columns:                     1;
+        lines:                       10;
+        cycle:                       true;
+        dynamic:                     true;
+        scrollbar:                   true;
+        layout:                      vertical;
+        reverse:                     false;
+        fixed-height:                true;
+        fixed-columns:               true;
+        spacing:                     5px;
+        margin:                      0px;
+        padding:                     0px;
+        border:                      0px solid;
+        border-radius:               0px;
+        border-color:                @border-colour;
+        background-color:            transparent;
+        text-color:                  @foreground-colour;
+        cursor:                      "default";
+    }
+    scrollbar {
+        handle-width:                5px ;
+        handle-color:                @handle-colour;
+        border-radius:               0px;
+        background-color:            @alternate-background;
+    }
+
+    /*****----- Elements -----*****/
+    element {
+        enabled:                     true;
+        spacing:                     10px;
+        margin:                      0px;
+        padding:                     5px 10px;
+        border:                      0px solid;
+        border-radius:               5px;
+        border-color:                @border-colour;
+        background-color:            transparent;
+        text-color:                  @foreground-colour;
+        cursor:                      pointer;
+    }
+    element normal.normal {
+        background-color:            var(normal-background);
+        text-color:                  var(normal-foreground);
+    }
+    element normal.urgent {
+        background-color:            var(urgent-background);
+        text-color:                  var(urgent-foreground);
+    }
+    element normal.active {
+        background-color:            var(active-background);
+        text-color:                  var(active-foreground);
+    }
+    element selected.normal {
+        background-color:            var(selected-normal-background);
+        text-color:                  var(selected-normal-foreground);
+    }
+    element selected.urgent {
+        background-color:            var(selected-urgent-background);
+        text-color:                  var(selected-urgent-foreground);
+    }
+    element selected.active {
+        background-color:            var(selected-active-background);
+        text-color:                  var(selected-active-foreground);
+    }
+    element alternate.normal {
+        background-color:            var(alternate-normal-background);
+        text-color:                  var(alternate-normal-foreground);
+    }
+    element alternate.urgent {
+        background-color:            var(alternate-urgent-background);
+        text-color:                  var(alternate-urgent-foreground);
+    }
+    element alternate.active {
+        background-color:            var(alternate-active-background);
+        text-color:                  var(alternate-active-foreground);
+    }
+    element-icon {
+        background-color:            transparent;
+        text-color:                  inherit;
+        size:                        24px;
+        cursor:                      inherit;
+    }
+    element-text {
+        background-color:            transparent;
+        text-color:                  inherit;
+        highlight:                   inherit;
+        cursor:                      inherit;
+        vertical-align:              0.5;
+        horizontal-align:            0.0;
+    }
+
+    /*****----- Mode Switcher -----*****/
+    mode-switcher{
+        enabled:                     true;
+        spacing:                     10px;
+        margin:                      0px;
+        padding:                     0px;
+        border:                      0px solid;
+        border-radius:               0px;
+        border-color:                @border-colour;
+        background-color:            transparent;
+        text-color:                  @foreground-colour;
+    }
+    button {
+        padding:                     5px 10px;
+        border:                      0px solid;
+        border-radius:               5px;
+        border-color:                @border-colour;
+        background-color:            @alternate-background;
+        text-color:                  inherit;
+        cursor:                      pointer;
+    }
+    button selected {
+        background-color:            var(selected-normal-background);
+        text-color:                  var(selected-normal-foreground);
+    }
+
+    /*****----- Message -----*****/
+    message {
+        enabled:                     true;
+        margin:                      0px;
+        padding:                     0px;
+        border:                      0px solid;
+        border-radius:               0px 0px 0px 0px;
+        border-color:                @border-colour;
+        background-color:            transparent;
+        text-color:                  @foreground-colour;
+    }
+    textbox {
+        padding:                     8px 10px;
+        border:                      0px solid;
+        border-radius:               5px;
+        border-color:                @border-colour;
+        background-color:            @alternate-background;
+        text-color:                  @foreground-colour;
+        vertical-align:              0.5;
+        horizontal-align:            0.0;
+        highlight:                   none;
+        placeholder-color:           @foreground-colour;
+        blink:                       true;
+        markup:                      true;
+    }
+    error-message {
+        padding:                     10px;
+        border:                      2px solid;
+        border-radius:               5px;
+        border-color:                @border-colour;
+        background-color:            @background-colour;
+        text-color:                  @foreground-colour;
+    }
+
+# Color Palette
+colors:
+  primary: "#33ccff"      # Electric blue
+  secondary: "#00ff99"    # Neon green  
+  accent: "#ff0080"       # Hot pink
+  background: "#1a1b26"   # Dark background
+  surface: "#24283b"      # Slightly lighter surface
+  text: "#c0caf5"         # Light text
+  text_secondary: "#9aa5ce" # Dimmed text
+  border: "#33ccff"       # Border color
+  warning: "#ff9e64"      # Orange warning
+  error: "#f7768e"        # Red error
+  success: "#00ff99"      # Green success
+
+# Additional theme metadata
+wallpaper:
+  path: "~/.config/hypr/wallpapers/cyberpunk.jpg"
+  mode: "fill"
+
+cursor:
+  theme: "Bibata-Modern-Ice"
+  size: 24
+
+icon_theme: "Papirus-Dark"
+
+gtk_theme: "Adwaita-dark" 
