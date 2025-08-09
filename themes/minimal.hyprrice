@@ -1,1 +1,238 @@
- 
+# HyprRice Theme: Minimal
+# A clean, minimal theme with simple colors and clean lines
+
+metadata:
+  name: "Minimal"
+  version: "1.0.0"
+  author: "HyprRice Team"
+  description: "A clean, minimal theme with subtle colors and clean design"
+  tags: ["minimal", "clean", "simple", "light"]
+
+# Hyprland Configuration
+hyprland:
+  general:
+    gaps_in: 5
+    gaps_out: 10
+    border_size: 1
+    col.active_border: "rgba(888888ff)"
+    col.inactive_border: "rgba(333333aa)"
+    resize_on_border: false
+    allow_tearing: false
+    layout: "dwindle"
+
+  decoration:
+    rounding: 5
+    blur:
+      enabled: false
+      size: 3
+      passes: 1
+    drop_shadow: true
+    shadow_range: 2
+    shadow_render_power: 2
+    col.shadow: "rgba(00000099)"
+
+  animations:
+    enabled: true
+    bezier:
+      - "linear, 0.0, 0.0, 1.0, 1.0"
+      - "ease, 0.25, 0.1, 0.25, 1"
+    animation:
+      - "windows, 1, 5, ease, slide"
+      - "windowsIn, 1, 5, ease, slide"
+      - "windowsOut, 1, 5, ease, slide"
+      - "border, 1, 8, linear"
+      - "fade, 1, 8, ease"
+      - "workspaces, 1, 4, ease"
+
+# Waybar Configuration
+waybar:
+  layer: "top"
+  position: "top"
+  height: 25
+  spacing: 2
+  output: ["*"]
+  
+  modules-left: ["hyprland/workspaces"]
+  modules-center: ["hyprland/window"]
+  modules-right: ["network", "cpu", "memory", "battery", "clock"]
+
+  style: |
+    * {
+        border: none;
+        border-radius: 0;
+        font-family: "Inter", sans-serif;
+        font-size: 12px;
+        min-height: 0;
+    }
+
+    window#waybar {
+        background-color: rgba(255, 255, 255, 0.95);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        color: #333333;
+    }
+
+    #workspaces button {
+        padding: 0 8px;
+        background-color: transparent;
+        color: #666666;
+        border-radius: 3px;
+        margin: 2px;
+    }
+
+    #workspaces button:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    #workspaces button.active {
+        background-color: #333333;
+        color: #ffffff;
+    }
+
+    #window {
+        color: #555555;
+        font-weight: 500;
+    }
+
+    #clock,
+    #battery,
+    #cpu,
+    #memory,
+    #network {
+        padding: 0 8px;
+        color: #333333;
+        background-color: rgba(0, 0, 0, 0.05);
+        margin: 2px;
+        border-radius: 3px;
+    }
+
+    #clock {
+        background-color: rgba(0, 0, 0, 0.1);
+        font-weight: 600;
+    }
+
+    #battery {
+        color: #2d5a2d;
+    }
+
+    #battery.charging {
+        color: #1a661a;
+    }
+
+    #battery.critical:not(.charging) {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+
+    #cpu {
+        color: #1565c0;
+    }
+
+    #memory {
+        color: #7b1fa2;
+    }
+
+    #network {
+        color: #00695c;
+    }
+
+    #network.disconnected {
+        color: #d32f2f;
+    }
+
+# Rofi Configuration
+rofi:
+  configuration:
+    modi: "drun,run,window"
+    width: 30
+    lines: 8
+    columns: 1
+    font: "Inter 11"
+    show-icons: true
+    terminal: "alacritty"
+    location: 0
+    fixed-num-lines: true
+
+  theme: |
+    * {
+        background-color: rgba(255, 255, 255, 0.95);
+        text-color: #333333;
+        border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    window {
+        transparency: "real";
+        location: center;
+        anchor: center;
+        width: 400px;
+        border: 1px solid;
+        border-radius: 5px;
+        padding: 10px;
+    }
+
+    inputbar {
+        children: [ prompt, textbox-prompt-colon, entry ];
+        spacing: 5px;
+    }
+
+    prompt {
+        text-color: #666666;
+    }
+
+    textbox-prompt-colon {
+        expand: false;
+        str: ":";
+        text-color: #666666;
+    }
+
+    entry {
+        placeholder: "Search...";
+        placeholder-color: #999999;
+    }
+
+    listview {
+        lines: 8;
+        scrollbar: false;
+        spacing: 2px;
+        margin: 5px 0px 0px 0px;
+    }
+
+    element {
+        padding: 5px;
+        border-radius: 3px;
+    }
+
+    element selected {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    element-icon {
+        size: 16px;
+        margin: 0px 5px 0px 0px;
+    }
+
+# Color Palette
+colors:
+  primary: "#333333"        # Dark gray
+  secondary: "#666666"      # Medium gray
+  accent: "#888888"         # Light gray
+  background: "#ffffff"     # White background
+  surface: "#f5f5f5"        # Light surface
+  text: "#333333"           # Dark text
+  text_secondary: "#666666" # Medium text
+  border: "#e0e0e0"         # Light border
+  warning: "#ff9800"        # Orange warning
+  error: "#f44336"          # Red error
+  success: "#4caf50"        # Green success
+
+# Additional theme metadata
+wallpaper:
+  path: "~/.config/hypr/wallpapers/minimal.jpg"
+  mode: "fill"
+
+cursor:
+  theme: "Adwaita"
+  size: 20
+
+icon_theme: "Adwaita"
+
+gtk_theme: "Adwaita" 

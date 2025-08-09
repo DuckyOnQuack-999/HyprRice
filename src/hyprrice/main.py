@@ -4,6 +4,7 @@ Main entry point for HyprRice application
 """
 
 import sys
+import os
 import argparse
 import logging
 from pathlib import Path
@@ -158,5 +159,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    import os
     sys.exit(main()) 
