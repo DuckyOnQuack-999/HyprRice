@@ -46,6 +46,7 @@ HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland c
 
 ### 🆕 **What's New in v1.0.0**
 - **Fixed Installation & Runtime Issues**: Resolved entry points, hyprctl API, and GUI startup problems
+- **Modern Python Packaging**: Updated to use `pyproject.toml` with SPDX license format, no setuptools warnings
 - **Enhanced CLI**: Improved `hyprrice doctor`, `hyprrice migrate`, and `hyprrice gui` commands
 - **Advanced Plugin System**: Event-based hooks (before/after apply, theme change, import, preview, etc.)
 - **Modern UI**: Polished interface with tooltips, help overlays, and improved feedback
@@ -233,9 +234,15 @@ HyprRice/
 ├── requirements.txt       # Python dependencies
 ├── requirements-dev.txt   # Development dependencies
 ├── requirements-test.txt  # Testing dependencies
-├── setup.py              # Package setup
-└── pyproject.toml        # Modern Python packaging
+├── pyproject.toml        # Modern Python packaging (primary)
+└── setup.py              # Legacy setup (minimal, for compatibility)
 ```
+
+### 📦 Packaging
+- **Primary**: `pyproject.toml` - Modern Python packaging with SPDX license format
+- **Legacy**: `setup.py` - Minimal compatibility layer
+- **Dependencies**: Managed through `pyproject.toml` with optional extras
+- **No Warnings**: All setuptools deprecation warnings resolved
 
 ## 🎯 Key Features in Detail
 
@@ -411,8 +418,11 @@ hyprrice doctor
 # Verify Python version (3.10+ required)
 python --version
 
-# Reinstall in development mode
+# Reinstall in development mode (clean installation)
 pip install -e . --force-reinstall
+
+# If you see setuptools warnings, they should be resolved in v1.0.0+
+# The project now uses modern pyproject.toml packaging
 ```
 
 #### Runtime Issues
