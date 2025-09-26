@@ -235,8 +235,7 @@ def check_dependencies() -> Dict[str, Any]:
             'description': 'Operating system',
             'install_command': 'N/A'
         }
-    except (OSError, ImportError, AttributeError) as e:
-        logging.getLogger(__name__).warning(f"Failed to get system info: {e}")
+    except Exception:
         results['system'] = {
             'available': False,
             'version': 'Unknown',
@@ -274,7 +273,7 @@ def run_command(command: List[str], capture_output: bool = True) -> Tuple[int, s
         return -1, "", "Command timed out"
     except FileNotFoundError:
         return -1, "", f"Command not found: {command[0]}"
-    except (subprocess.SubprocessError, OSError) as e:
+    except Exception as e:
         return -1, "", str(e)
 
 
@@ -293,7 +292,7 @@ def hyprctl(command: str, json: bool = False, use_cache: bool = True) -> Tuple[i
     # Sanitize command for security
     try:
         command = sanitize_hyprctl_command(command)
-    except (ValueError, TypeError) as e:
+    except Exception as e:
         logging.getLogger(__name__).error(f"Command validation failed: {e}")
         return -1, "", str(e)
     
@@ -386,11 +385,6 @@ def clear_hyprctl_cache():
     global _hyprctl_cache, _cache_ttl
     _hyprctl_cache.clear()
     _cache_ttl.clear()
-    # Clear cached functions
-    get_monitors_cached.cache_clear()
-    get_workspaces_cached.cache_clear()
-    get_windows_cached.cache_clear()
-    validate_color_cached.cache_clear()
 
 def get_monitors() -> List[Dict[str, str]]:
     """Get list of monitors from hyprctl."""
@@ -589,21 +583,6 @@ def validate_color_cached(color: str) -> bool:
     """Cached version of color validation for better performance."""
     return validate_color(color)
 
-@lru_cache(maxsize=64)
-def get_monitors_cached() -> List[Dict[str, str]]:
-    """Cached version of get_monitors for better performance."""
-    return get_monitors()
-
-@lru_cache(maxsize=64)
-def get_workspaces_cached() -> List[Dict[str, str]]:
-    """Cached version of get_workspaces for better performance."""
-    return get_workspaces()
-
-@lru_cache(maxsize=64)
-def get_windows_cached() -> List[Dict[str, str]]:
-    """Cached version of get_windows for better performance."""
-    return get_windows()
-
 def parse_hyprland_config(config_path: str) -> Dict[str, List[str]]:
     """Parse Hyprland configuration file with source directive support."""
     config_path = Path(config_path)
@@ -764,8 +743,7 @@ def validate_sourced_file(file_path: str) -> bool:
     try:
         file_path = Path(file_path)
         return file_path.exists() and file_path.is_file() and file_path.stat().st_size > 0
-    except (OSError, PermissionError, FileNotFoundError) as e:
-        logging.getLogger(__name__).debug(f"File validation failed for {file_path}: {e}")
+    except Exception:
         return False
 
 

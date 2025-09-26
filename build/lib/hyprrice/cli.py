@@ -299,44 +299,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             print(f"\n⚠️  Found {critical_issues} issue(s). See above for details.")
             if args.fix:
                 print("🔧 Attempting to fix issues...")
-                fixed_count = 0
-                
-                # Fix missing configuration
-                config_path = Path.home() / '.config' / 'hyprrice' / 'config.yaml'
-                if not config_path.exists():
-                    try:
-                        from hyprrice.migration import migrate_user_config
-                        print("   Creating initial configuration...")
-                        migrate_user_config()
-                        print("   ✅ Configuration created")
-                        fixed_count += 1
-                    except Exception as e:
-                        print(f"   ❌ Failed to create config: {e}")
-                
-                # Fix missing plugins directory
-                plugins_dir = Path.home() / '.hyprrice' / 'plugins'
-                if not plugins_dir.exists():
-                    try:
-                        plugins_dir.mkdir(parents=True, exist_ok=True)
-                        print("   ✅ Plugins directory created")
-                        fixed_count += 1
-                    except Exception as e:
-                        print(f"   ❌ Failed to create plugins directory: {e}")
-                
-                # Fix missing backup directory
-                backup_dir = Path.home() / '.hyprrice' / 'backups'
-                if not backup_dir.exists():
-                    try:
-                        backup_dir.mkdir(parents=True, exist_ok=True)
-                        print("   ✅ Backup directory created")
-                        fixed_count += 1
-                    except Exception as e:
-                        print(f"   ❌ Failed to create backup directory: {e}")
-                
-                if fixed_count > 0:
-                    print(f"   🎉 Fixed {fixed_count} issue(s)")
-                else:
-                    print("   ℹ️  No auto-fixable issues found")
+                # TODO: Implement auto-fix logic
+                print("   Auto-fix not yet implemented")
             return 1
             
     except Exception as e:
