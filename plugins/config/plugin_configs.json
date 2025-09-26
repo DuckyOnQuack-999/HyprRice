@@ -1,0 +1,18 @@
+{
+  "terminal_theming": {
+    "enabled_terminals": [
+      "kitty",
+      "alacritty"
+    ],
+    "backup_configs": true,
+    "auto_reload": true
+  },
+  "notification_theming": {
+    "enabled_daemons": [
+      "mako"
+    ],
+    "backup_configs": true,
+    "border_radius": 8,
+    "max_visible": 3
+  }
+}

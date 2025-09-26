@@ -1,72 +1,71 @@
 # Changelog
 
-## [1.0.0] - 2024 Initial Release
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2024-12-19
 
 ### Added
-- Modern PyQt5 GUI for the Hyprland ecosystem
-  - Intuitive tab-based interface
-  - Live preview system
-  - Status bar with helpful feedback
-  - Tooltips and help overlays
-  - Improved error handling and validation
+- Initial public release of HyprRice
+- Comprehensive GUI for Hyprland theme management
+- CLI interface with commands: `gui`, `check`, `migrate`, `plugins`, `doctor`
+- Plugin system with sandboxing and security controls
+- Theme import/export functionality with validation
+- Backup and restore system for configurations
+- Real-time preview with Hyprland integration
+- Performance monitoring and profiling
+- Security validation and input sanitization
+- Configuration migration system
+- Comprehensive documentation generation
+- CI/CD pipeline with automated testing and PyPI publishing
 
-- Deep Integration with Hyprland Tools
-  - Hyprland core configuration
-  - Waybar customization
-  - Rofi theme management
-  - Notification system (Dunst/Mako)
-  - Clipboard managers
-  - Lockscreen configuration
+### Features
+- **Theme Management**: Create, edit, import, and export Hyprland themes
+- **Plugin System**: Extensible architecture with terminal and notification theming plugins
+- **Security**: Input validation, path sanitization, and plugin sandboxing
+- **Performance**: Caching, async operations, and background workers
+- **User Experience**: Keyboard shortcuts, error handling, and user-friendly dialogs
+- **Integration**: Direct Hyprland integration via `hyprctl` commands
+- **Documentation**: Auto-generated API docs and user guides
 
-- Advanced Theme System
-  - Theme gallery with live preview
-  - Import/export capabilities
-  - Custom theme creation
-  - Community theme sharing
-  - Pre-installed themes (minimal, cyberpunk, pastel)
+### Technical Details
+- Python 3.10+ support
+- PyQt5 GUI framework
+- YAML configuration format
+- JSON schema validation
+- Plugin metadata and configuration system
+- Comprehensive test suite
+- Type hints throughout codebase
 
-- Robust Plugin Architecture
-  - Event-based plugin system
-  - Advanced hooks (before/after actions)
-  - Plugin manager with hot-reload
-  - Example plugins and documentation
-  - Community plugin support
+### Security
+- Input validation and sanitization
+- Path traversal prevention
+- Command injection protection
+- Plugin sandboxing with resource limits
+- Secure file I/O operations
 
-- Configuration Management
-  - Backup and restore
-  - Undo/redo system
-  - Import/export with validation
-  - Auto-save functionality
-  - Configuration versioning
+### Performance
+- Caching for `hyprctl` commands
+- Asynchronous operations
+- Background workers for heavy tasks
+- Memory usage monitoring
+- Profiling decorators
 
-- Safety and Validation
-  - Pre-change validation
-  - Automatic backups
-  - Rollback capability
-  - Syntax checking
-  - Dependency verification
+### Documentation
+- API documentation generation
+- User guides and tutorials
+- Plugin development guidelines
+- Configuration reference
+- Troubleshooting guides
 
-- Documentation and Testing
-  - Comprehensive user guide
-  - API documentation
-  - Example configurations
-  - Full test suite
-  - Performance benchmarks
+## [Unreleased]
 
-### Changed
-- Initial stable release
-- Standardized plugin API
-- Unified theme format
-- Consistent UI/UX patterns
-
-### Fixed
-- Plugin loading reliability
-- Theme preview performance
-- Configuration validation
-- Error handling and feedback
-- Documentation clarity
-
-## Notes
-- This is the initial stable release
-- Future updates will maintain backward compatibility
-- Plugin API will remain stable for v1.x 
+### Planned
+- PySide6 support
+- Additional plugin types
+- Theme marketplace integration
+- Advanced configuration templates
+- Enhanced error recovery
+- Performance optimizations

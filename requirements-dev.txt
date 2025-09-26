@@ -1,0 +1,21 @@
+# Development and Testing Dependencies
+-r requirements.txt
+
+# Testing Framework
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-qt>=4.0.0
+
+# Code Quality
+black>=23.0.0
+isort>=5.12.0
+flake8>=6.0.0
+mypy>=1.0.0
+
+# Documentation
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.2.0
+
+# Additional Development Tools
+pre-commit>=3.0.0
+tox>=4.0.0

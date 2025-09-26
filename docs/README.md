@@ -1,58 +1,60 @@
 # HyprRice Documentation
 
-[![Python CI](https://github.com/DuckyOnQuack-999/HyprRice/actions/workflows/python-ci.yml/badge.svg)](https://github.com/DuckyOnQuack-999/HyprRice/actions/workflows/python-ci.yml)
+Welcome to the comprehensive documentation for HyprRice - a modern GUI tool for customizing Hyprland and its ecosystem.
 
-Welcome to the HyprRice documentation! This guide will help you navigate the available documentation resources.
+## Quick Start
 
-## Table of Contents
-- [Core Documentation](#core-documentation)
-- [Tutorials](#tutorials)
-- [Reference](#reference)
-- [How-To Guides](#how-to-guides)
-- [Development](#development)
-- [Examples](#examples)
-- [Style Guide](#style-guide)
+1. [Installation Guide](installation.md)
+2. [Configuration Guide](configuration.md)
+3. [Plugin System](plugins.md)
 
-## 📚 Core Documentation
+## Documentation Sections
 
-- [User Guide](user_guide.md) - Complete guide to using HyprRice
-- [Project Summary](../PROJECT_SUMMARY.md) - Technical overview and architecture
-- [Changelog](../CHANGELOG.md) - Version history and changes
+### User Guides
+- **[Configuration Guide](configuration.md)** - Complete configuration reference
+- **[Plugin Guide](plugins.md)** - Using and developing plugins
+- **[Security Guide](security.md)** - Security features and best practices
+- **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
 
-## 🎓 Tutorials
+### Developer Documentation
+- **[API Documentation](api.md)** - Complete API reference
+- **[Development Guide](development.md)** - Contributing to HyprRice
+- **[Testing Guide](testing.md)** - Running and writing tests
 
-- [Quick Start](tutorials/quick_start.md) - Get up and running in minutes
-- [Theme Creation](tutorials/theme_creation.md) - Create your own themes
-- [Plugin Development](tutorials/plugin_development.md) - Write custom plugins
+## Features
 
-## 📖 Reference
+### Core Features
+- **Modern GUI** - Intuitive interface for Hyprland configuration
+- **Theme Management** - Create, apply, and share themes
+- **Plugin System** - Extensible architecture with sandboxing
+- **Configuration Backup** - Automatic backup and restore
+- **Live Preview** - Real-time configuration preview
 
-- [Configuration Reference](reference/configuration.md) - All configuration options
-- [Plugin API Reference](reference/plugin_api.md) - Complete plugin API documentation
-- [Theme Format Reference](reference/theme_format.md) - Theme file format specification
+### Security Features
+- **Input Validation** - Comprehensive input sanitization
+- **Plugin Sandboxing** - Secure plugin execution environment
+- **Path Restrictions** - Prevent path traversal attacks
+- **Command Sanitization** - Safe hyprctl command execution
 
-## 🔧 How-To Guides
+### Performance Features
+- **Async Operations** - Non-blocking UI operations
+- **Caching System** - Intelligent caching with TTL
+- **Memory Management** - Leak detection and prevention
+- **Performance Monitoring** - Built-in performance tracking
 
-- [Common Tasks](howto/common_tasks.md) - Step-by-step guides for common operations
-- [Troubleshooting](howto/troubleshooting.md) - Solutions to common issues
-- [Best Practices](howto/best_practices.md) - Tips and recommendations
+## System Requirements
 
-## 🛠️ Development
+- **Operating System**: Linux with Wayland support
+- **Window Manager**: Hyprland
+- **Python**: 3.10 or higher
+- **Dependencies**: PyQt5, PyYAML, psutil
 
-- [Contributing Guide](development/contributing.md) - How to contribute to HyprRice
-- [Development Setup](development/setup.md) - Setting up the development environment
-- [Testing Guide](development/testing.md) - Running and writing tests
+## Support
 
-## 📦 Examples
-
-- [Example Themes](../themes/) - Pre-installed themes
-- [Example Plugins](examples/plugins/) - Sample plugin implementations
-- [Configuration Examples](examples/configs/) - Common configuration patterns
-
-## 📝 Style Guide
-
-- [Documentation & Code Style Guide](STYLE_GUIDE.md)
+- **Issues**: Report issues on the project repository
+- **Documentation**: This documentation covers all aspects of HyprRice
+- **Community**: Join our community discussions
 
 ---
 
-For more, see the [main repository](https://github.com/DuckyOnQuack-999/HyprRice) and the [README](../README.md). 
+*HyprRice - Making Hyprland configuration beautiful and accessible.*

@@ -2,16 +2,22 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Wayland](https://img.shields.io/badge/Wayland-Compatible-brightgreen.svg)](https://wayland.freedesktop.org/)
 [![CI](https://github.com/DuckyOnQuack-999/HyprRice/actions/workflows/python-ci.yml/badge.svg)](https://github.com/DuckyOnQuack-999/HyprRice/actions/workflows/python-ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/hyprrice.svg)](https://pypi.org/project/hyprrice/)
+[![Downloads](https://pepy.tech/badge/hyprrice)](https://pepy.tech/project/hyprrice)
 
 HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland compositor ecosystem. It provides a seamless, user-friendly GUI to customize every aspect of Hyprland and its associated tools, including animations, Waybar, Rofi, window opacities, notifications, clipboard managers, and more.
 
 ## 📚 Documentation
+- [Documentation Home](docs/README.md)
 - [User Guide](docs/user_guide.md)
 - [Troubleshooting](docs/howto/troubleshooting.md)
 - [Quick Start](docs/tutorials/quick_start.md)
+- [API Reference](docs/api.md)
+- [Plugin Development](docs/plugins.md)
+- [Security Guide](docs/security.md)
 
 ## 🌟 Features
 
@@ -37,6 +43,13 @@ HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland c
 - Configuration parsing and syntax validation
 - Performance optimized for low resource usage
 - Full Wayland compatibility
+
+### 🆕 **What's New in v1.0.0**
+- Advanced event-based plugin hooks (before/after apply, theme change, import, preview, etc.)
+- Polished, modern UI with tooltips, help overlays, and improved feedback
+- Import/export with validation, preview, and backup integration
+- Detailed changelog and audit trail export (Markdown, HTML, JSON)
+- Accessibility and performance improvements
 
 ## 📦 Installation
 
@@ -79,7 +92,31 @@ pip install -e .
 pip install hyprrice
 ```
 
+#### Option 3: Using the CLI
+```bash
+# Launch GUI
+hyprrice gui
+
+# Check system status
+hyprrice doctor
+
+# List available plugins
+hyprrice plugins list
+
+# Migrate configuration
+hyprrice migrate
+```
+
 ## 🚀 Quick Start
+
+1. **Install dependencies:**
+   ```sh
+   pip install -r requirements.txt
+   ```
+2. **Run HyprRice:**
+   ```sh
+   python -m src.hyprrice.main
+   ```
 
 See the [Quick Start Guide](docs/tutorials/quick_start.md) or the [User Guide](docs/user_guide.md) for detailed instructions.
 
@@ -188,6 +225,14 @@ HyprRice/
 - **Extensible Architecture**: Add custom animations, Waybar modules
 - **API**: Third-party tool integration
 - **Community Contributions**: Share plugins via GitHub
+- **Plugin Development**: Place your plugin `.py` files in `~/.hyprrice/plugins/`
+- **Plugin Registration**: Each plugin must define a `register(app)` function
+- **Example Plugin**:
+  ```python
+  def register(app):
+      print("Plugin loaded! You can add tabs, controls, or logic here.")
+  ```
+- **Plugin Capabilities**: Plugins can add tabs, controls, or logic to the main app
 
 ## 🔧 Configuration
 
@@ -217,6 +262,11 @@ HyprRice automatically creates timestamped backups before applying changes:
 └── 2024-01-15_14-30-25_rofi_config
 ```
 
+### Backup, Restore, Undo, Redo
+- Use the Settings tab to backup or restore your config, or to undo/redo changes
+- All changes are logged in the audit log for traceability
+- Export/import and CI/CD-ready output (coming soon)
+
 ## 🧪 Testing
 
 Run the test suite:
@@ -230,6 +280,8 @@ pytest tests/test_hyprland.py
 pytest tests/test_gui.py
 ```
 
+Tests cover config, utils, theme manager, plugin manager, and more.
+
 ## 🤝 Contributing
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -237,11 +289,11 @@ pytest tests/test_gui.py
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-AUR PKGBUILD contributions are welcome!
+Pull requests and plugins welcome! AUR PKGBUILD contributions are welcome!
 
 ## 📄 License
 
-This project is licensed under the GPL-2.0 License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
@@ -260,58 +312,3 @@ This project is licensed under the GPL-2.0 License - see the LICENSE file for de
 ---
 
 **Made with ❤️ for the Hyprland community** 
-
-## Features
-- Modern GUI (PyQt5)
-- Configuration management for Hyprland, Waybar, Rofi, notifications, clipboard, lockscreen, and more
-- Theme system with live preview and easy switching
-- Deep integration with Hyprland and related tools
-- Plugin system: extend HyprRice with your own Python plugins
-- Backup, restore, undo, redo, and audit log for all changes
-- Export/import and CI/CD-ready output (coming soon)
-- Full test suite for config, utils, theme manager, plugin manager, and more
-
-## Getting Started
-
-1. **Install dependencies:**
-   ```sh
-   pip install -r requirements.txt
-   ```
-2. **Run HyprRice:**
-   ```sh
-   python -m src.hyprrice.main
-   ```
-
-## Plugins
-- Place your plugin `.py` files in `~/.hyprrice/plugins/`.
-- Each plugin must define a `register(app)` function.
-- Example:
-  ```python
-  def register(app):
-      print("Plugin loaded! You can add tabs, controls, or logic here.")
-  ```
-- Plugins can add tabs, controls, or logic to the main app.
-
-## Backup, Restore, Undo, Redo
-- Use the Settings tab to backup or restore your config, or to undo/redo changes.
-- All changes are logged in the audit log for traceability.
-
-## Testing
-- Run all tests with:
-  ```sh
-  pytest tests/
-  ```
-- Tests cover config, utils, theme manager, plugin manager, and more.
-
-## Documentation
-- See [docs/user_guide.md](docs/user_guide.md) for a full user guide and advanced usage.
-
-## Contributing
-Pull requests and plugins welcome! 
-
-## 🆕 What's New in v1.0.0
-- Advanced event-based plugin hooks (before/after apply, theme change, import, preview, etc.)
-- Polished, modern UI with tooltips, help overlays, and improved feedback
-- Import/export with validation, preview, and backup integration
-- Detailed changelog and audit trail export (Markdown, HTML, JSON)
-- Accessibility and performance improvements 

@@ -63,20 +63,17 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "hyprrice=hyprrice.main:main",
+            "hyprrice=hyprrice.cli:main",
         ],
     },
     include_package_data=True,
     package_data={
         "hyprrice": [
             "themes/*.hyprrice",
-            "assets/icons/*.png",
-            "assets/previews/*.png",
         ],
     },
     data_files=[
         ("share/applications", ["data/hyprrice.desktop"]),
-        ("share/icons/hicolor/scalable/apps", ["assets/icons/hyprrice.svg"]),
         ("share/hyprrice", ["data/default_config.yaml"]),
     ],
     keywords="hyprland, wayland, desktop, customization, ricing, linux",

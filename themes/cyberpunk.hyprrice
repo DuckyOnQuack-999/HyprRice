@@ -1,1 +1,75 @@
- 
+name: Cyberpunk
+description: A vibrant cyberpunk theme with neon colors
+author: HyprRice Team
+version: 1.0.0
+tags:
+  - cyberpunk
+  - neon
+  - vibrant
+  - futuristic
+
+colors:
+  primary: "#ff00cc"
+  secondary: "#00fff7"
+  accent: "#ff0080"
+  text: "#00fff7"
+  background: "#0a0a0a"
+  surface: "#1a1a1a"
+
+hyprland:
+  border_color: "#ff00cc"
+  gaps_in: 8
+  gaps_out: 15
+  blur_enabled: true
+  blur_size: 12
+  animation_duration: 0.3
+  animation_curve: "ease-in-out"
+
+waybar:
+  background_color: "rgba(10, 10, 10, 0.9)"
+  text_color: "#00fff7"
+  border_color: "rgba(255, 0, 204, 0.8)"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 13
+  height: 30
+  position: "top"
+
+rofi:
+  background_color: "#0a0a0a"
+  text_color: "#00fff7"
+  border_color: "#ff00cc"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 14
+  width: 40
+  location: "center"
+
+notifications:
+  background_color: "#0a0a0a"
+  text_color: "#00fff7"
+  border_color: "#ff00cc"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 12
+  timeout: 5000
+  position: "top-right"
+
+clipboard:
+  manager: "cliphist"
+  history_size: 100
+  auto_sync: true
+  include_images: true
+  include_text: true
+  include_files: false
+
+lockscreen:
+  daemon: "hyprlock"
+  background: ""
+  timeout: 300
+  show_clock: true
+  show_date: true
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 24
+  text_color: "#00fff7"
+  background_color: "#0a0a0a"
+  border_color: "#ff00cc"
+  blur_background: true
+  blur_size: 12

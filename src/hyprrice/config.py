@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from .exceptions import ConfigError
+from .security import input_validator, SecureFileHandler
 
 
 @dataclass
@@ -61,6 +62,13 @@ class HyprlandConfig:
     blur_enabled: bool = True
     blur_size: int = 8
     blur_passes: int = 1
+    
+    # Sourced configuration files
+    sourced_files: list = field(default_factory=lambda: [
+        "~/.config/hypr/rules.conf",
+        "~/.config/hypr/workspace.conf",
+        "~/.config/hypr/exec.conf"
+    ])
 
 
 @dataclass
@@ -106,6 +114,47 @@ class NotificationConfig:
 
 
 @dataclass
+class ClipboardConfig:
+    """Clipboard manager configuration."""
+    manager: str = "cliphist"  # cliphist or wl-clipboard
+    history_size: int = 100
+    auto_sync: bool = True
+    sync_interval: int = 30  # seconds
+    include_images: bool = True
+    include_text: bool = True
+    include_files: bool = True
+    exclude_patterns: list = field(default_factory=lambda: [
+        "password", "secret", "token", "key"
+    ])
+    max_item_size: int = 1024 * 1024  # 1MB
+
+
+@dataclass
+class LockscreenConfig:
+    """Lockscreen configuration."""
+    daemon: str = "hyprlock"  # hyprlock or swaylock
+    background: str = "~/.config/hyprlock/background.jpg"
+    timeout: int = 300  # seconds
+    grace_period: int = 5  # seconds
+    fade_in: bool = True
+    fade_out: bool = True
+    fade_time: float = 0.5
+    show_clock: bool = True
+    clock_format: str = "%H:%M:%S"
+    show_date: bool = True
+    date_format: str = "%Y-%m-%d"
+    font_family: str = "JetBrainsMono Nerd Font"
+    font_size: int = 24
+    text_color: str = "#ffffff"
+    background_color: str = "#000000"
+    border_color: str = "#5e81ac"
+    border_size: int = 2
+    blur_background: bool = True
+    blur_size: int = 8
+    animation_duration: float = 0.3
+
+
+@dataclass
 class Config:
     """Main configuration class."""
     general: GeneralConfig = field(default_factory=GeneralConfig)
@@ -115,22 +164,35 @@ class Config:
     waybar: WaybarConfig = field(default_factory=WaybarConfig)
     rofi: RofiConfig = field(default_factory=RofiConfig)
     notifications: NotificationConfig = field(default_factory=NotificationConfig)
+    clipboard: ClipboardConfig = field(default_factory=ClipboardConfig)
+    lockscreen: LockscreenConfig = field(default_factory=LockscreenConfig)
     
     def __post_init__(self):
         """Expand paths after initialization."""
         self._expand_paths()
     
     def _expand_paths(self):
-        """Expand all path configurations."""
+        """Expand all path configurations with security validation."""
         for field_name in self.paths.__dataclass_fields__:
             path_value = getattr(self.paths, field_name)
             if isinstance(path_value, str) and path_value.startswith("~"):
-                expanded_path = os.path.expanduser(path_value)
-                setattr(self.paths, field_name, expanded_path)
+                try:
+                    # Validate path before expansion
+                    expanded_path = os.path.expanduser(path_value)
+                    validated_path = input_validator.validate_path(expanded_path)
+                    setattr(self.paths, field_name, str(validated_path))
+                except Exception as e:
+                    # Log error but don't fail completely - use safe default
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Invalid path {path_value} for {field_name}: {e}")
+                    # Set to a safe default path
+                    safe_default = os.path.expanduser(f"~/.config/hyprrice/{field_name}")
+                    setattr(self.paths, field_name, safe_default)
     
     @classmethod
     def load(cls, config_path: Optional[str] = None) -> "Config":
-        """Load configuration from file."""
+        """Load configuration from file with security validation."""
         if config_path is None:
             config_path = cls._get_default_config_path()
         
@@ -143,25 +205,26 @@ class Config:
             return config
         
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                data = yaml.safe_load(f)
+            # Use secure file handler
+            secure_handler = SecureFileHandler()
+            data = secure_handler.safe_read_yaml(config_path)
             
             return cls._from_dict(data)
         except Exception as e:
             raise ConfigError(f"Failed to load configuration from {config_path}: {e}")
     
     def save(self, config_path: Optional[str] = None) -> None:
-        """Save configuration to file."""
+        """Save configuration to file with security validation."""
         if config_path is None:
             config_path = self._get_default_config_path()
         
         config_path = Path(config_path)
-        config_path.parent.mkdir(parents=True, exist_ok=True)
         
         try:
+            # Use secure file handler
+            secure_handler = SecureFileHandler()
             data = self._to_dict()
-            with open(config_path, 'w', encoding='utf-8') as f:
-                yaml.dump(data, f, default_flow_style=False, indent=2)
+            secure_handler.safe_write_yaml(data, config_path)
         except Exception as e:
             raise ConfigError(f"Failed to save configuration to {config_path}: {e}")
     
@@ -175,6 +238,8 @@ class Config:
             'waybar': self.waybar.__dict__,
             'rofi': self.rofi.__dict__,
             'notifications': self.notifications.__dict__,
+            'clipboard': self.clipboard.__dict__,
+            'lockscreen': self.lockscreen.__dict__,
         }
     
     @classmethod
@@ -217,6 +282,16 @@ class Config:
                 if hasattr(config.notifications, key):
                     setattr(config.notifications, key, value)
         
+        if 'clipboard' in data:
+            for key, value in data['clipboard'].items():
+                if hasattr(config.clipboard, key):
+                    setattr(config.clipboard, key, value)
+        
+        if 'lockscreen' in data:
+            for key, value in data['lockscreen'].items():
+                if hasattr(config.lockscreen, key):
+                    setattr(config.lockscreen, key, value)
+        
         config._expand_paths()
         return config
     
@@ -238,7 +313,7 @@ class Config:
             if not path:
                 raise ConfigError(f"Required path '{path_name}' is not set")
         
-        # Validate values
+        # Validate Hyprland values
         if not 0 <= self.hyprland.window_opacity <= 1:
             raise ConfigError("Window opacity must be between 0 and 1")
         
@@ -247,5 +322,66 @@ class Config:
         
         if self.hyprland.gaps_in < 0 or self.hyprland.gaps_out < 0:
             raise ConfigError("Gaps must be non-negative")
+        
+        if not 0.1 <= self.hyprland.animation_duration <= 5.0:
+            raise ConfigError("Animation duration must be between 0.1 and 5.0 seconds")
+        
+        if self.hyprland.blur_size < 0:
+            raise ConfigError("Blur size must be non-negative")
+        
+        # Validate Waybar values
+        if self.waybar.height < 10 or self.waybar.height > 100:
+            raise ConfigError("Waybar height must be between 10 and 100 pixels")
+        
+        if self.waybar.font_size < 8 or self.waybar.font_size > 32:
+            raise ConfigError("Waybar font size must be between 8 and 32")
+        
+        # Validate Rofi values
+        if self.rofi.width < 10 or self.rofi.width > 100:
+            raise ConfigError("Rofi width must be between 10 and 100 percent")
+        
+        if self.rofi.font_size < 8 or self.rofi.font_size > 32:
+            raise ConfigError("Rofi font size must be between 8 and 32")
+        
+        # Validate notification values
+        if self.notifications.timeout < 100 or self.notifications.timeout > 30000:
+            raise ConfigError("Notification timeout must be between 100 and 30000 milliseconds")
+        
+        if self.notifications.font_size < 8 or self.notifications.font_size > 32:
+            raise ConfigError("Notification font size must be between 8 and 32")
+        
+        # Validate clipboard values
+        if self.clipboard.history_size < 10 or self.clipboard.history_size > 10000:
+            raise ConfigError("Clipboard history size must be between 10 and 10000")
+        
+        if self.clipboard.sync_interval < 1 or self.clipboard.sync_interval > 3600:
+            raise ConfigError("Clipboard sync interval must be between 1 and 3600 seconds")
+        
+        # Validate lockscreen values
+        if self.lockscreen.timeout < 0 or self.lockscreen.timeout > 3600:
+            raise ConfigError("Lockscreen timeout must be between 0 and 3600 seconds")
+        
+        if self.lockscreen.grace_period < 0 or self.lockscreen.grace_period > 60:
+            raise ConfigError("Lockscreen grace period must be between 0 and 60 seconds")
+        
+        if self.lockscreen.font_size < 8 or self.lockscreen.font_size > 48:
+            raise ConfigError("Lockscreen font size must be between 8 and 48")
+        
+        if not 0.1 <= self.lockscreen.animation_duration <= 2.0:
+            raise ConfigError("Lockscreen animation duration must be between 0.1 and 2.0 seconds")
+        
+        # Validate GUI values
+        if self.gui.window_width < 800 or self.gui.window_width > 3840:
+            raise ConfigError("GUI window width must be between 800 and 3840 pixels")
+        
+        if self.gui.window_height < 600 or self.gui.window_height > 2160:
+            raise ConfigError("GUI window height must be between 600 and 2160 pixels")
+        
+        if self.gui.auto_save_interval < 5 or self.gui.auto_save_interval > 300:
+            raise ConfigError("Auto-save interval must be between 5 and 300 seconds")
+        
+        # Validate general values
+        if self.general.backup_retention < 1 or self.general.backup_retention > 100:
+            raise ConfigError("Backup retention must be between 1 and 100")
         
         return True 

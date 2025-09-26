@@ -55,4 +55,29 @@ class ValidationError(HyprRiceError):
 
 class DependencyError(HyprRiceError):
     """Missing dependency errors."""
+    pass
+
+
+class FileError(HyprRiceError):
+    """File operation errors."""
+    pass
+
+
+class NetworkError(HyprRiceError):
+    """Network-related errors."""
+    pass
+
+
+class PermissionError(HyprRiceError):
+    """Permission-related errors."""
+    pass
+
+
+class TimeoutError(HyprRiceError):
+    """Operation timeout errors."""
+    pass
+
+
+class SecurityError(HyprRiceError):
+    """Security-related errors."""
     pass 

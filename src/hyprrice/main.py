@@ -3,6 +3,7 @@
 Main entry point for HyprRice application
 """
 
+import os
 import sys
 import argparse
 import logging
@@ -13,7 +14,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 
 from .config import Config
-from .gui import HyprRiceGUI
+from .main_gui import HyprRiceGUI
 from .utils import setup_logging, check_dependencies, create_directories
 from .exceptions import HyprRiceError
 
@@ -114,8 +115,11 @@ def main() -> int:
         
         # Check dependencies if requested
         if args.check_deps:
-            deps_ok = check_dependencies()
-            return 0 if deps_ok else 1
+            deps_result = check_dependencies()
+            # Count missing required dependencies
+            missing_required = sum(1 for dep in deps_result.values() 
+                                 if not dep.get('available', False) and dep.get('required', False))
+            return 0 if missing_required == 0 else 1
         
         # Create necessary directories
         create_directories()
@@ -158,5 +162,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    import os
     sys.exit(main()) 

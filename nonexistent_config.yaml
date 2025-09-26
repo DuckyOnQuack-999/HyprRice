@@ -1,0 +1,102 @@
+clipboard:
+  auto_sync: true
+  exclude_patterns:
+  - password
+  - secret
+  - token
+  - key
+  history_size: 100
+  manager: cliphist
+  max_item_size: 1048576
+  sync_interval: 30
+general:
+  auto_backup: true
+  backup_retention: 10
+  language: en
+  live_preview: true
+  theme: auto
+gui:
+  auto_save: true
+  auto_save_interval: 30
+  show_status_bar: true
+  show_tooltips: true
+  theme: dark
+  window_height: 800
+  window_width: 1200
+hyprland:
+  animation_curve: ease-out
+  animation_duration: 0.5
+  animations_enabled: true
+  blur_enabled: true
+  blur_passes: 1
+  blur_size: 8
+  border_color: '#ffffff'
+  border_size: 1
+  gaps_in: 5
+  gaps_out: 10
+  smart_borders: true
+  smart_gaps: true
+  window_opacity: 1.0
+lockscreen:
+  animation_duration: 0.3
+  background: ~/.config/hyprlock/background.jpg
+  background_color: '#2e3440'
+  blur_background: true
+  blur_size: 8
+  border_color: '#5e81ac'
+  border_size: 2
+  clock_format: '%H:%M'
+  date_format: '%Y-%m-%d'
+  fade_in: true
+  fade_out: true
+  fade_time: 0.5
+  font_family: JetBrainsMono Nerd Font
+  font_size: 24
+  grace_period: 5
+  show_clock: true
+  show_date: true
+  text_color: '#eceff4'
+  timeout: 300
+notifications:
+  background_color: '#2e3440'
+  border_color: '#5e81ac'
+  daemon: dunst
+  font_family: JetBrainsMono Nerd Font
+  font_size: 12
+  position: top-right
+  text_color: '#eceff4'
+  timeout: 5000
+paths:
+  backup_dir: /home/duckyonquack999/.hyprrice/backups/
+  dunst_config: /home/duckyonquack999/.config/dunst/
+  hyprland_config: /home/duckyonquack999/.config/hypr/hyprland.conf
+  log_dir: /home/duckyonquack999/.hyprrice/logs/
+  mako_config: /home/duckyonquack999/.config/mako/
+  rofi_config: /home/duckyonquack999/.config/rofi/
+  theme_dir: /home/duckyonquack999/.hyprrice/themes/
+  waybar_config: /home/duckyonquack999/.config/waybar/
+rofi:
+  anchor: center
+  background_color: '#2e3440'
+  border_color: '#5e81ac'
+  font_family: JetBrainsMono Nerd Font
+  font_size: 14
+  location: center
+  text_color: '#eceff4'
+  theme: default
+  width: 40
+waybar:
+  background_color: rgba(43, 48, 59, 0.5)
+  border_color: rgba(100, 115, 245, 0.5)
+  font_family: JetBrainsMono Nerd Font
+  font_size: 13
+  height: 30
+  modules:
+  - clock
+  - battery
+  - network
+  - cpu
+  - memory
+  - tray
+  position: top
+  text_color: '#ffffff'

@@ -11,16 +11,16 @@ __email__ = "hyprrice@example.com"
 __description__ = "Comprehensive Hyprland Ecosystem Ricing Tool"
 
 from .config import Config
-from .gui import HyprRiceGUI
+from .main_gui import HyprRiceGUI
 from .utils import setup_logging, check_dependencies
+
+# Create HyprRice as an alias to the main GUI for backward compatibility
+HyprRice = HyprRiceGUI
 
 __all__ = [
     "Config",
-    "HyprRiceGUI", 
+    "HyprRiceGUI",
+    "HyprRice", 
     "setup_logging",
     "check_dependencies",
-    "__version__",
-    "__author__",
-    "__email__",
-    "__description__",
 ] 

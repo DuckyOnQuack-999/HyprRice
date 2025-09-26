@@ -5,37 +5,225 @@ alwaysApply: false
 ---
 Instructions for Cursor AI
 
+## 🔷 1. Universal Input Ingestion Processes comprehensive inputs with AI-powered parsing (Mini Edition)
+- **Supported Types**: Code (.py, .sh, .js, .ts, .jsx, .cpp, .md, .json, .yaml, .sql); Documents (.txt, .csv, .pdf); Media (images with OCR, up to 10MB).
+- **Capabilities**: Auto-detect encoding/language; Basic mixed-file parsing; Recursive scan (max 10MB); UI detection for Python (Tkinter), Web (React), Desktop (Electron).
+- **Config**:
 
+```yaml
+input_config:
+  supported_formats: [py, sh, js, ts, jsx, cpp, md, json, yaml, sql, txt, csv, pdf]
+  auto_convert_encoding: true
+  handle_binary: false
+  max_file_size: 10MB
+  recursive_directory_scan: true
+  ai_filetype_detection: true
+  multi_modal_parsing: basic
+```
 
+## 🔷 2. Modular Operational Modes Configurable pipeline with essential runtime modes (Mini Edition)
+```yaml
+modes:
+  merge_only: true/false
+  analyze_only: true/false
+  full_pipeline: true/false  # Default for mini ops
+  dry_run: true/false
+  destructive_allowed: false  # Safety first
+  report_only: true/false
+  mockup_preview: true  # Quick UI sketches
+  realtime_collaboration:
+    enabled: false  # Mini skips multi-user
+  continuous_integration:
+    enabled: false
+    platforms: [github]  # Basic GitHub only
+    severity_threshold: medium
+    block_on_errors: true
+  security_scanning:
+    enabled: true
+    scan_intensity: basic
+  ui_design:
+    framework: auto/react  # Web-focused
+    responsive_previews: true
+    accessibility_checks: true  # Basic WCAG
+  debug_assistant: true
+  api_validation: false
+  doc_generator: true
+  performance_profiling:
+    enabled: false
+  quantum_computing:
+    enabled: false
+  distributed_processing:
+    enabled: false
+  ar_vr_mode:
+    enabled: false
+```
 
+Workflows: Quick editing, basic CI gen, debug tips, doc extraction.
 
-Generate the full codebase, including all modules, GUI, plugins, and documentation.
+## 🔷 3. Merging & Structural Preservation Intelligent merging with traceability (Mini Edition)
 
+- **Core Merging**: Semantic diff for key languages; Basic conflict flags.
+- **Traceability**: Simple version tags, side-by-side views.
+- **Structure**: Sections (Intro, Logic, Docs, Tests, UI).
+- **AI Resolution**:
 
+```python
+def resolve_conflict(original, version_a, version_b):
+    sem_diff = compute_basic_diff(original, version_a, version_b)
+    if sem_diff.is_conflict:
+        return merge_simple(original, version_a, version_b, prioritize='logic')
+    return original  # Flag for manual
+```
 
-Use modern Python practices (type hints, docstrings, PEP 8).
+Enhancements: Basic dep graphs.
 
+## 🔷 4. AI-Powered Deep Analysis 5-phase pipeline (Mini Edition)
 
+- **Phase 1: Structural**: Syntax, deps, patterns.
+- **Phase 2: Semantic**: Logic flow, compat checks.
+- **Phase 3: Security**: Basic vulns, API checks.
+- **Phase 4: Performance**: Simple profiling.
+- **Phase 5: UI/UX**: Layout scoring.
+- **Domain-Specific**: Web (routes, components); UI (React hooks).
 
-Include detailed comments for Hyprland-specific logic and Wayland interactions.
+## 🔷 5. AI-Driven Enhancements & Fixes Tiered fixes (Mini Edition)
 
+- **Tier 1: Core**: Syntax repair, basic opt.
+- **Tier 2: Structural**: Refactor patterns.
+- **Tier 3: Semantic**: Data opt.
+- **Confidence Scoring**: High/medium/low.
+- **ML Opt Example**:
 
+```python
+def optimize_simple(module):
+    bottlenecks = profile_basic(module)
+    if bottlenecks:
+        return generate_fixed_code(module, bottlenecks[0])
+    return module
+```
 
-Validate code for syntax, logical correctness, and Wayland compatibility.
+UI Suggestions: Basic layout tweaks.
 
+## 🔷 6. Intelligent Logic Completion Detects gaps; generates essentials (Mini Edition)
 
+- Fills TODOs, code/functions/tests.
+- **Predictive**:
 
-Provide sample config snippets (e.g., hyprland.conf, waybar/config) in the docs.
+```python
+def generate_completion(context):
+    patterns = detect_patterns(context)
+    return predict_module(context, patterns)
+```
 
+Categories: Code functions, basic tests (pytest/Jest).
 
+## 🔷 7. Structural Output Composition Layered output (Mini Edition)
 
-Include installation instructions for all dependencies.
+- Sections: Original, Issues, Fixes, Completions.
+- Include: TOC, Changelog, Summary.
+- Interactive: Basic collapsible MD.
+- Templates: MD, JSON.
 
+## 🔷 8. Output Export & Integration Basic formats (Mini Edition)
 
-Output the project as a zip file or GitHub repository link.
+- **Formats**: MD, JSON, Git diffs.
+- **Integrations**: VS Code, GitHub Actions.
+- **CI/CD Example**:
 
+```yaml
+name: Mini Pipeline
+on: [push]
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: duckycoder-mini --mode full_pipeline --output md+json --ui true
+      - uses: actions/upload-artifact@v3
+```
 
+## 🔷 9. Integrity, Traceability, and Auditability Preserves originals (Mini Edition)
 
-Ensure the tool is intuitive for beginners yet powerful for advanced users.
+- Trace changes; Basic audit logs.
+- Guardrails: Sandboxed edits.
 
-This HyprRice tool should be the definitive solution for ricing the Hyprland ecosystem, offering unparalleled customization and integration for a polished desktop experience.
+## 🔷 10. Double-Check Cycle Self-review essentials (Mini Edition)
+
+- Checklist: Inputs processed, fixes consistent, UI aligned.
+
+## 🔷 11. UI Mockup Generation Textual/HTML previews (Mini Edition)
+
+- Frameworks: React, Tkinter.
+- Example React MD:
+
+```html
+<div style="border:1px solid #ccc; padding:10px; width:200px;">
+  <h1>Feature Header</h1>
+  <input type="text" placeholder="Input" style="width:100%;">
+  <button>Submit</button>
+</div>
+```
+
+## 🔷 12. Enhanced Communication Guidelines Adaptive tone (Mini Edition)
+
+- Multilingual: Basic auto-detect.
+- Tone: Professional yet approachable.
+
+## 🔷 13. Comprehensive Usage Guide Basic commands (Mini Edition)
+
+- CLI:
+
+```bash
+duckycoder-mini process myfile.py --mode full_pipeline --output md --ui true --security basic
+```
+
+- JS SDK:
+
+```javascript
+const Mini = require('duckycoder-mini');
+const proc = new Mini({config: {ui: true}});
+proc.processFile('file.js').then(applyChanges);
+```
+
+## 🔷 14. AI-Powered Documentation Generator Auto-docs (Mini Edition)
+
+- Formats: MD.
+- Example:
+
+```markdown
+# Docs
+## Function: resolve_conflict
+Desc: Merges versions.
+Params: original, a, b
+Returns: Merged code.
+```
+
+## 🔷 15. Machine Learning Optimization Basic predictions (Mini Edition)
+
+```python
+def ml_optimize(code):
+    data = profile(code)
+    return apply_basic_opt(code, data)
+```
+
+## 🔷 16. Real-Time Performance Monitoring Track basics (Mini Edition)
+
+```yaml
+performance_monitoring:
+  enabled: true
+  metrics: [cpu, memory]
+  alert_thresholds: {cpu: 80%}
+```
+
+## 🔷 17. Advanced Features Essentials only (Mini Edition)
+
+- **Domain Knowledge**: Web (Next.js, React); Sys Admin (basic bash).
+- Example Web TS:
+
+```typescript
+export async function POST(req) {
+  const {code} = await req.json();
+  const analysis = await analyzeCode(code);
+  return Response.json({analysis});
+}
+```
