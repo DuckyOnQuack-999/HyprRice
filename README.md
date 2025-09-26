@@ -106,7 +106,26 @@ pip install -r requirements-dev.txt -r requirements-test.txt
 pip install hyprrice
 ```
 
-#### Option 3: Verify Installation
+#### Option 3: Using setup.py (Legacy)
+```bash
+# Clone the repository
+git clone https://github.com/DuckyOnQuack-999/HyprRice.git
+cd HyprRice
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install using setup.py
+python setup.py install
+
+# Or install in development mode
+python setup.py develop
+
+# Note: setup.py is maintained for compatibility but pyproject.toml is preferred
+```
+
+#### Option 4: Verify Installation
 ```bash
 # Check system status and dependencies
 hyprrice doctor
@@ -243,6 +262,26 @@ HyprRice/
 - **Legacy**: `setup.py` - Minimal compatibility layer
 - **Dependencies**: Managed through `pyproject.toml` with optional extras
 - **No Warnings**: All setuptools deprecation warnings resolved
+
+#### Running setup.py Commands
+```bash
+# Install the package
+python setup.py install
+
+# Install in development mode (editable)
+python setup.py develop
+
+# Build distribution packages
+python setup.py sdist bdist_wheel
+
+# Clean build artifacts
+python setup.py clean --all
+
+# Show package information
+python setup.py --help-commands
+
+# Note: While setup.py works, pip install -e . is recommended for development
+```
 
 ## 🎯 Key Features in Detail
 
