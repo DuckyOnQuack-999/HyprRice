@@ -45,11 +45,15 @@ HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland c
 - Full Wayland compatibility
 
 ### 🆕 **What's New in v1.0.0**
-- Advanced event-based plugin hooks (before/after apply, theme change, import, preview, etc.)
-- Polished, modern UI with tooltips, help overlays, and improved feedback
-- Import/export with validation, preview, and backup integration
-- Detailed changelog and audit trail export (Markdown, HTML, JSON)
-- Accessibility and performance improvements
+- **Fixed Installation & Runtime Issues**: Resolved entry points, hyprctl API, and GUI startup problems
+- **Enhanced CLI**: Improved `hyprrice doctor`, `hyprrice migrate`, and `hyprrice gui` commands
+- **Advanced Plugin System**: Event-based hooks (before/after apply, theme change, import, preview, etc.)
+- **Modern UI**: Polished interface with tooltips, help overlays, and improved feedback
+- **Configuration Migration**: Automatic migration from older config formats with backup
+- **Import/Export**: Validation, preview, and backup integration
+- **Security Features**: Input validation, path restrictions, and command sanitization
+- **Performance Monitoring**: Built-in performance tracking and optimization
+- **Comprehensive Testing**: 298+ tests covering all major functionality
 
 ## 📦 Installation
 
@@ -80,11 +84,20 @@ sudo dnf install hyprland waybar rofi dunst swww grim slurp cliphist hyprlock \
 
 ### Install HyprRice (Manual)
 
-#### Option 1: From Source
+#### Option 1: From Source (Recommended)
 ```bash
 git clone https://github.com/DuckyOnQuack-999/HyprRice.git
 cd HyprRice
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install in development mode
 pip install -e .
+
+# Install development dependencies
+pip install -r requirements-dev.txt -r requirements-test.txt
 ```
 
 #### Option 2: Using pip
@@ -92,18 +105,18 @@ pip install -e .
 pip install hyprrice
 ```
 
-#### Option 3: Using the CLI
+#### Option 3: Verify Installation
 ```bash
+# Check system status and dependencies
+hyprrice doctor
+
 # Launch GUI
 hyprrice gui
-
-# Check system status
-hyprrice doctor
 
 # List available plugins
 hyprrice plugins list
 
-# Migrate configuration
+# Migrate configuration (if needed)
 hyprrice migrate
 ```
 
@@ -115,7 +128,11 @@ hyprrice migrate
    ```
 2. **Run HyprRice:**
    ```sh
-   python -m src.hyprrice.main
+   # Launch GUI
+   hyprrice gui
+   
+   # Or check system status first
+   hyprrice doctor
    ```
 
 See the [Quick Start Guide](docs/tutorials/quick_start.md) or the [User Guide](docs/user_guide.md) for detailed instructions.
@@ -182,21 +199,42 @@ window {
 
 ```
 HyprRice/
-├── src/                    # Main source code
-│   ├── main.py            # Application entry point
+├── src/hyprrice/          # Main source code
+│   ├── cli.py             # Command-line interface
+│   ├── main.py            # Legacy entry point
+│   ├── main_gui.py        # Main GUI application
+│   ├── config.py          # Configuration management
+│   ├── utils.py           # Utility functions
+│   ├── migration.py       # Configuration migration
+│   ├── backup.py          # Backup system
+│   ├── history.py         # History management
+│   ├── plugins.py         # Plugin system
+│   ├── security.py        # Security features
+│   ├── performance.py     # Performance monitoring
 │   ├── hyprland/          # Hyprland-specific modules
-│   ├── waybar.py          # Waybar configuration
-│   ├── rofi.py            # Rofi configuration
-│   ├── notifications.py   # Notification daemon config
-│   ├── clipboard.py       # Clipboard manager
-│   ├── lockscreen.py      # Lockscreen configuration
-│   ├── gui.py             # Main GUI application
-│   └── plugins/           # Plugin system
+│   │   ├── animations.py  # Animation configuration
+│   │   ├── display.py     # Display settings
+│   │   ├── input.py       # Input configuration
+│   │   ├── windows.py     # Window management
+│   │   └── workspaces.py  # Workspace settings
+│   └── gui/               # GUI components
+│       ├── tabs.py        # Tab implementations
+│       ├── theme_manager.py # Theme management
+│       ├── preview.py     # Live preview
+│       ├── preferences.py # Preferences dialog
+│       ├── backup_manager.py # Backup management
+│       └── plugin_manager.py # Plugin management
+├── plugins/               # Built-in plugins
+│   ├── terminal_theming.py
+│   └── notification_theming.py
 ├── themes/                # Pre-installed themes
-├── assets/                # Icons and previews
-├── docs/                  # Documentation
 ├── tests/                 # Unit tests
-└── requirements.txt       # Python dependencies
+├── docs/                  # Documentation
+├── requirements.txt       # Python dependencies
+├── requirements-dev.txt   # Development dependencies
+├── requirements-test.txt  # Testing dependencies
+├── setup.py              # Package setup
+└── pyproject.toml        # Modern Python packaging
 ```
 
 ## 🎯 Key Features in Detail
@@ -269,27 +307,81 @@ HyprRice automatically creates timestamped backups before applying changes:
 
 ## 🧪 Testing
 
-Run the test suite:
+Run the complete test suite:
 ```bash
-pytest tests/
-```
+# Run all tests
+pytest
 
-Run specific tests:
-```bash
-pytest tests/test_hyprland.py
+# Run with verbose output
+pytest -v
+
+# Run specific test categories
+pytest tests/test_cli.py
 pytest tests/test_gui.py
+pytest tests/test_hyprland_integration.py
+pytest tests/test_plugin_system.py
+
+# Run with coverage
+pytest --cov=src/hyprrice
+
+# Run tests in parallel
+pytest -n auto
 ```
 
-Tests cover config, utils, theme manager, plugin manager, and more.
+**Test Coverage**: 298+ tests covering:
+- CLI functionality and commands
+- GUI components and interactions
+- Hyprland integration and configuration
+- Plugin system and security
+- Backup and migration systems
+- Configuration management
+- Error handling and validation
 
 ## 🤝 Contributing
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
-Pull requests and plugins welcome! AUR PKGBUILD contributions are welcome!
+We welcome contributions! Here's how to get started:
+
+### Development Setup
+1. **Fork and clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/HyprRice.git
+   cd HyprRice
+   ```
+
+2. **Set up development environment:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   pip install -e .
+   pip install -r requirements-dev.txt -r requirements-test.txt
+   ```
+
+3. **Run tests to ensure everything works:**
+   ```bash
+   pytest
+   ```
+
+### Making Changes
+1. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Make your changes and add tests
+3. Run tests (`pytest`)
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+### What We're Looking For
+- **Bug fixes**: Help us improve stability
+- **New features**: Enhance the user experience
+- **Plugin development**: Extend functionality
+- **Documentation**: Improve guides and examples
+- **Testing**: Increase test coverage
+- **AUR PKGBUILD**: Package management improvements
+
+### Code Style
+- Follow PEP 8 for Python code
+- Use type hints where appropriate
+- Add docstrings for new functions
+- Include tests for new functionality
 
 ## 📄 License
 
@@ -302,12 +394,50 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Rofi](https://github.com/davatorium/rofi) - Window switcher and launcher
 - [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) - GUI framework
 
-## 📞 Support
+## 📞 Support & Troubleshooting
 
+### Getting Help
 - **GitHub Issues**: [Report bugs and request features](https://github.com/DuckyOnQuack-999/HyprRice/issues)
-- **Discord**: Join our community server
-- **Documentation**: Check the [docs](docs/) folder
-- **Wiki**: Community-maintained guides and tips
+- **Documentation**: Check the [docs](docs/) folder for detailed guides
+- **Troubleshooting**: See [troubleshooting guide](docs/howto/troubleshooting.md)
+
+### Common Issues & Solutions
+
+#### Installation Problems
+```bash
+# Check system dependencies
+hyprrice doctor
+
+# Verify Python version (3.10+ required)
+python --version
+
+# Reinstall in development mode
+pip install -e . --force-reinstall
+```
+
+#### Runtime Issues
+```bash
+# Check if Hyprland is running
+hyprctl version
+
+# Verify configuration
+hyprrice migrate
+
+# Reset to defaults (creates backup)
+rm ~/.config/hyprrice/config.yaml
+hyprrice gui
+```
+
+#### GUI Issues
+- Ensure you're running on Wayland: `echo $WAYLAND_DISPLAY`
+- Check PyQt5 installation: `python -c "import PyQt5; print('OK')"`
+- Try running with debug mode: `hyprrice gui --debug`
+
+### Performance Tips
+- Use `hyprrice doctor` to identify missing dependencies
+- Enable performance monitoring in preferences
+- Use the backup system before major changes
+- Keep your configuration files organized
 
 ---
 
