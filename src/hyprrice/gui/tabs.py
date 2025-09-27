@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QFormLayout, QCheckBox, QDoubleSpinBox, QComboBox, QSpinBox, QLineEdit, QPushButton, QColorDialog, QHBoxLayout, QMessageBox, QFileDialog, QGroupBox, QListWidget, QListWidgetItem, QInputDialog
-from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFormLayout, QCheckBox, QDoubleSpinBox, QComboBox, QSpinBox, QLineEdit, QPushButton, QColorDialog, QHBoxLayout, QMessageBox, QFileDialog, QGroupBox, QListWidget, QListWidgetItem, QInputDialog
+from PyQt6.QtCore import pyqtSignal
 from ..hyprland.animations import AnimationManager
 from ..hyprland.windows import WindowManager
 from ..utils import backup_file, restore_file, parse_hyprland_config, write_hyprland_config
@@ -194,11 +194,6 @@ class HyprlandTab(BaseTab):
             # Include sourced files
             sections['_sourced_files'] = self.config.hyprland.sourced_files
             write_hyprland_config(config_path, sections)
-            
-            # Clear hyprctl cache after applying changes
-            from ..utils import clear_hyprctl_cache
-            clear_hyprctl_cache()
-            
             QMessageBox.information(self, "Apply Success", "Hyprland config applied and backed up.")
         except Exception as e:
             QMessageBox.critical(self, "Apply Failed", f"Failed to apply config: {e}")
@@ -215,11 +210,6 @@ class HyprlandTab(BaseTab):
                 return
             latest_backup = sorted(backups)[-1]
             restore_file(os.path.join(backup_dir, latest_backup), config_path)
-            
-            # Clear hyprctl cache after rollback
-            from ..utils import clear_hyprctl_cache
-            clear_hyprctl_cache()
-            
             QMessageBox.information(self, "Rollback Success", "Hyprland config restored from backup.")
         except Exception as e:
             QMessageBox.critical(self, "Rollback Failed", f"Failed to rollback config: {e}")

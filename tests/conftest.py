@@ -11,6 +11,9 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+# Set Qt platform plugin for headless testing
+os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+
 from hyprrice.config import Config
 from hyprrice.history import HistoryManager, BackupManager
 from hyprrice.gui.theme_manager import ThemeManager
@@ -148,7 +151,7 @@ def mock_hyprctl():
 def mock_qapplication():
     """Mock QApplication for GUI tests."""
     import unittest.mock
-    with unittest.mock.patch('PyQt5.QtWidgets.QApplication'):
+    with unittest.mock.patch('PyQt6.QtWidgets.QApplication'):
         yield
 
 
@@ -156,8 +159,8 @@ def mock_qapplication():
 def mock_qmessagebox():
     """Mock QMessageBox for GUI tests."""
     import unittest.mock
-    with unittest.mock.patch('PyQt5.QtWidgets.QMessageBox') as mock:
-        mock.return_value.exec_.return_value = None
+    with unittest.mock.patch('PyQt6.QtWidgets.QMessageBox') as mock:
+        mock.return_value.exec.return_value = None
         yield mock
 
 

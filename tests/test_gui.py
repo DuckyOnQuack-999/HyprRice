@@ -12,6 +12,9 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+# Set Qt platform plugin for headless testing
+os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+
 from hyprrice.config import Config
 from hyprrice.main_gui import HyprRiceGUI
 from hyprrice.history import HistoryManager, BackupManager
@@ -31,7 +34,7 @@ class TestHyprRiceGUI(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -88,7 +91,7 @@ class TestHyprRiceGUI(unittest.TestCase):
     
     def test_show_error(self):
         """Test error dialog display."""
-        with patch('PyQt5.QtWidgets.QMessageBox') as mock_msgbox:
+        with patch('PyQt6.QtWidgets.QMessageBox') as mock_msgbox:
             mock_msgbox.return_value.exec_.return_value = None
             
             self.gui.show_error("Test Error", "Test message")
@@ -97,7 +100,7 @@ class TestHyprRiceGUI(unittest.TestCase):
     
     def test_show_warning(self):
         """Test warning dialog display."""
-        with patch('PyQt5.QtWidgets.QMessageBox') as mock_msgbox:
+        with patch('PyQt6.QtWidgets.QMessageBox') as mock_msgbox:
             mock_msgbox.return_value.exec_.return_value = None
             
             self.gui.show_warning("Test Warning", "Test message")
@@ -106,7 +109,7 @@ class TestHyprRiceGUI(unittest.TestCase):
     
     def test_show_info(self):
         """Test info dialog display."""
-        with patch('PyQt5.QtWidgets.QMessageBox') as mock_msgbox:
+        with patch('PyQt6.QtWidgets.QMessageBox') as mock_msgbox:
             mock_msgbox.return_value.exec_.return_value = None
             
             self.gui.show_info("Test Info", "Test message")
@@ -171,7 +174,7 @@ class TestHyprRiceGUI(unittest.TestCase):
             mock_list.return_value = []
             
             # Should show "No backups" message
-            with patch('PyQt5.QtWidgets.QMessageBox') as mock_msgbox:
+            with patch('PyQt6.QtWidgets.QMessageBox') as mock_msgbox:
                 self.gui.restore_config()
                 mock_msgbox.assert_called()
     
@@ -180,19 +183,19 @@ class TestHyprRiceGUI(unittest.TestCase):
         with patch('hyprrice.utils.check_dependencies') as mock_check:
             mock_check.return_value = True
             
-            with patch('PyQt5.QtWidgets.QMessageBox') as mock_msgbox:
+            with patch('PyQt6.QtWidgets.QMessageBox') as mock_msgbox:
                 self.gui.check_dependencies()
                 mock_msgbox.assert_called()
     
     def test_show_about(self):
         """Test about dialog."""
-        with patch('PyQt5.QtWidgets.QMessageBox.about') as mock_about:
+        with patch('PyQt6.QtWidgets.QMessageBox.about') as mock_about:
             self.gui.show_about()
             mock_about.assert_called_once()
     
     def test_show_help(self):
         """Test help dialog."""
-        with patch('PyQt5.QtWidgets.QDialog') as mock_dialog:
+        with patch('PyQt6.QtWidgets.QDialog') as mock_dialog:
             mock_dialog.return_value.exec_.return_value = None
             
             self.gui.show_help()
@@ -201,7 +204,7 @@ class TestHyprRiceGUI(unittest.TestCase):
     def test_close_event(self):
         """Test close event handling."""
         with patch.object(self.gui.config, 'save') as mock_save:
-            from PyQt5.QtGui import QCloseEvent
+            from PyQt6.QtGui import QCloseEvent
             
             # Mock the close event
             event = MagicMock()
@@ -234,7 +237,7 @@ class TestHyprRiceGUI(unittest.TestCase):
     
     def test_show_question(self):
         """Test question dialog."""
-        with patch('PyQt5.QtWidgets.QMessageBox.question') as mock_question:
+        with patch('PyQt6.QtWidgets.QMessageBox.question') as mock_question:
             mock_question.return_value = 0  # Yes button
             
             result = self.gui.show_question("Test Question", "Test message")
@@ -264,7 +267,7 @@ class TestGUIIntegration(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             app = QApplication([])
         else:
@@ -290,7 +293,7 @@ class TestGUIIntegration(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             app = QApplication([])
         else:
@@ -315,7 +318,7 @@ class TestGUIIntegration(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             app = QApplication([])
         else:

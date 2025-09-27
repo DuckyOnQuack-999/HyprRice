@@ -146,7 +146,7 @@ class TestIntegration(unittest.TestCase):
     def test_gui_config_integration(self):
         """Test GUI and configuration integration."""
         # Mock QApplication to avoid GUI initialization
-        with patch('PyQt5.QtWidgets.QApplication'):
+        with patch('PyQt6.QtWidgets.QApplication'):
             from hyprrice.main_gui import HyprRiceGUI
             gui = HyprRiceGUI(self.config)
             

@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
     QListWidget, QListWidgetItem, QPushButton, QLabel, QTextEdit,
     QGroupBox, QFormLayout, QLineEdit, QSpinBox, QCheckBox,
@@ -21,8 +21,8 @@ from PyQt5.QtWidgets import (
     QScrollArea, QGridLayout, QTreeWidget, QTreeWidgetItem,
     QHeaderView, QTableWidget, QTableWidgetItem
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QThread, pyqtSlot
-from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPixmap
+from PyQt6.QtCore import Qt, pyqtSignal, QThread, pyqtSlot
+from PyQt6.QtGui import QFont, QPalette, QColor, QIcon, QPixmap
 
 from ..plugins import EnhancedPluginManager, PluginMetadata
 

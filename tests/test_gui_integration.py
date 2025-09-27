@@ -138,7 +138,7 @@ class TestHyprlandTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -204,7 +204,7 @@ class TestWaybarTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -261,7 +261,7 @@ class TestRofiTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -318,7 +318,7 @@ class TestNotificationsTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -375,7 +375,7 @@ class TestClipboardTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -432,7 +432,7 @@ class TestLockscreenTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -489,7 +489,7 @@ class TestThemesTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -572,7 +572,7 @@ class TestSettingsTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -625,7 +625,7 @@ class TestPluginsTab(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -696,7 +696,7 @@ class TestThemeManager(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:
@@ -851,7 +851,7 @@ class TestPreviewWindow(unittest.TestCase):
         disable_auto_monitoring()
         
         # Create a proper QApplication for testing
-        from PyQt5.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication
         if not QApplication.instance():
             self.app = QApplication([])
         else:

@@ -31,6 +31,7 @@ src/hyprrice.egg-info/top_level.txt
 src/hyprrice/gui/__init__.py
 src/hyprrice/gui/backup_manager.py
 src/hyprrice/gui/backup_tab.py
+src/hyprrice/gui/modern_theme.py
 src/hyprrice/gui/plugin_manager.py
 src/hyprrice/gui/preferences.py
 src/hyprrice/gui/preview.py

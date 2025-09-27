@@ -1,5 +1,5 @@
 # Core GUI Framework
-PyQt5>=5.15.0
+PyQt6>=6.5.0
 
 # Configuration and Data Handling
 PyYAML>=6.0
