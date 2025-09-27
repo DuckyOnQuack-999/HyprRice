@@ -5,7 +5,7 @@ A modern, user-friendly GUI application for customizing the Hyprland Wayland com
 and its associated tools including Waybar, Rofi, notifications, and more.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "HyprRice Team"
 __email__ = "hyprrice@example.com"
 __description__ = "Comprehensive Hyprland Ecosystem Ricing Tool"

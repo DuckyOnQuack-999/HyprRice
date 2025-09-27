@@ -30,36 +30,13 @@ jobs:
       run: |
         twine check dist/*
     
-    - name: Publish to PyPI
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: |
-        twine upload dist/*
-      if: env.TWINE_PASSWORD != ''
-    
-    - name: Create GitHub Release
+    - name: Create Release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
-        body: |
-          ## HyprRice ${{ github.ref_name }}
-          
-          ### What's New
-          - See [CHANGELOG.md](CHANGELOG.md) for detailed changes
-          
-          ### Installation
-          ```bash
-          pip install hyprrice
-          ```
-          
-          ### Usage
-          ```bash
-          hyprrice gui
-          ```
         draft: false
         prerelease: false
     
@@ -69,7 +46,16 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/
-        asset_name: hyprrice-${{ github.ref_name }}-dist
+        asset_path: ./dist/hyprrice-${{ github.ref_name }}.tar.gz
+        asset_name: hyprrice-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip
+    
+    - name: Upload Wheel Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/hyprrice-${{ github.ref_name }}-py3-none-any.whl
+        asset_name: hyprrice-${{ github.ref_name }}-py3-none-any.whl
         asset_content_type: application/zip
-      if: steps.create_release.outputs.upload_url != ''

@@ -194,6 +194,11 @@ class HyprlandTab(BaseTab):
             # Include sourced files
             sections['_sourced_files'] = self.config.hyprland.sourced_files
             write_hyprland_config(config_path, sections)
+            
+            # Clear hyprctl cache after applying changes
+            from ..utils import clear_hyprctl_cache
+            clear_hyprctl_cache()
+            
             QMessageBox.information(self, "Apply Success", "Hyprland config applied and backed up.")
         except Exception as e:
             QMessageBox.critical(self, "Apply Failed", f"Failed to apply config: {e}")
@@ -210,6 +215,11 @@ class HyprlandTab(BaseTab):
                 return
             latest_backup = sorted(backups)[-1]
             restore_file(os.path.join(backup_dir, latest_backup), config_path)
+            
+            # Clear hyprctl cache after rollback
+            from ..utils import clear_hyprctl_cache
+            clear_hyprctl_cache()
+            
             QMessageBox.information(self, "Rollback Success", "Hyprland config restored from backup.")
         except Exception as e:
             QMessageBox.critical(self, "Rollback Failed", f"Failed to rollback config: {e}")

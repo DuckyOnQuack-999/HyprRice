@@ -2,6 +2,7 @@ import os
 import json
 import importlib.util
 import logging
+from abc import ABC, abstractmethod
 from typing import List, Callable, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -25,9 +26,9 @@ class PluginMetadata:
         if self.config_schema is None:
             self.config_schema = {}
 
-class PluginBase:
+class PluginBase(ABC):
     """
-    Enhanced base class for HyprRice plugins with comprehensive lifecycle management.
+    Enhanced abstract base class for HyprRice plugins with comprehensive lifecycle management.
     
     Available hooks:
       - before_apply: Called before applying configuration to Hyprland
@@ -48,9 +49,10 @@ class PluginBase:
         self.enabled = True
         
     @property
+    @abstractmethod
     def metadata(self) -> PluginMetadata:
         """Return plugin metadata. Must be implemented by plugins."""
-        raise NotImplementedError("Plugins must implement metadata property")
+        pass
     
     def register(self, app):
         """Register plugin with the main app. Override in plugin."""

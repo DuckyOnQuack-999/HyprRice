@@ -1,3 +1,2 @@
 [console_scripts]
 hyprrice = hyprrice.cli:main
-

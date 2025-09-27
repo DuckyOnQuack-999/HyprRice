@@ -6,6 +6,7 @@ import os
 import json
 import shutil
 import logging
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime
@@ -487,20 +488,22 @@ class CommandManager:
         return False
 
 
-class Command:
-    """Base class for commands."""
+class Command(ABC):
+    """Abstract base class for commands."""
     
     def __init__(self, config: Config):
         self.config = config
         self.logger = logging.getLogger(__name__)
     
+    @abstractmethod
     def execute(self) -> bool:
         """Execute the command."""
-        raise NotImplementedError
+        pass
     
+    @abstractmethod
     def undo(self) -> bool:
         """Undo the command."""
-        raise NotImplementedError
+        pass
     
     def get_action_name(self) -> str:
         """Get the action name."""
