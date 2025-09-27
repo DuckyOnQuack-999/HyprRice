@@ -285,17 +285,17 @@ class HyprRiceGUI(QMainWindow):
         """Setup keyboard shortcuts for better accessibility."""
         shortcuts = [
             # File operations
-            (QKeySequence.New, self.new_theme),
-            (QKeySequence.Open, self.open_theme),
-            (QKeySequence.Save, self.save_theme),
+            (QKeySequence.StandardKey.New, self.new_theme),
+            (QKeySequence.StandardKey.Open, self.open_theme),
+            (QKeySequence.StandardKey.Save, self.save_theme),
             (QKeySequence("Ctrl+E"), self.export_config),
             (QKeySequence("Ctrl+I"), self.import_config),
-            (QKeySequence.Quit, self.close),
+            (QKeySequence.StandardKey.Quit, self.close),
             
             # Edit operations
-            (QKeySequence.Undo, self.undo),
-            (QKeySequence.Redo, self.redo),
-            (QKeySequence.Preferences, self.show_preferences),
+            (QKeySequence.StandardKey.Undo, self.undo),
+            (QKeySequence.StandardKey.Redo, self.redo),
+            (QKeySequence.StandardKey.Preferences, self.show_preferences),
             
             # View operations
             (QKeySequence("F5"), self.refresh_all_tabs),

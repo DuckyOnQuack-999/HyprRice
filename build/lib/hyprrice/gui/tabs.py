@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QFormLayout, QCheckBox, QDoubleSpinBox, QComboBox, QSpinBox, QLineEdit, QPushButton, QColorDialog, QHBoxLayout, QMessageBox, QFileDialog, QGroupBox, QListWidget, QListWidgetItem, QInputDialog
-from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFormLayout, QCheckBox, QDoubleSpinBox, QComboBox, QSpinBox, QLineEdit, QPushButton, QColorDialog, QHBoxLayout, QMessageBox, QFileDialog, QGroupBox, QListWidget, QListWidgetItem, QInputDialog
+from PyQt6.QtCore import pyqtSignal
 from ..hyprland.animations import AnimationManager
 from ..hyprland.windows import WindowManager
 from ..utils import backup_file, restore_file, parse_hyprland_config, write_hyprland_config
@@ -222,9 +222,9 @@ class HyprlandTab(BaseTab):
             # Check if file exists and add status indicator
             from ..utils import validate_sourced_file
             if validate_sourced_file(file_path):
-                item.setIcon(self.style().standardIcon(self.style().SP_DialogApplyButton))
+                item.setIcon(self.style().standardIcon(self.style().StandardPixmap.SP_DialogApplyButton))
             else:
-                item.setIcon(self.style().standardIcon(self.style().SP_MessageBoxWarning))
+                item.setIcon(self.style().standardIcon(self.style().StandardPixmap.SP_MessageBoxWarning))
             self.sourced_files_list.addItem(item)
 
     def _add_sourced_file(self):

@@ -9,14 +9,14 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 import os
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
     QMenuBar, QStatusBar, QMessageBox, QApplication, QSplitter,
     QTreeWidget, QTreeWidgetItem, QLabel, QPushButton, QFrame, QProgressBar,
-    QFileDialog, QShortcut
+    QFileDialog
 )
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread, pyqtSlot
-from PyQt5.QtGui import QKeySequence, QIcon, QFont, QPalette, QColor
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, pyqtSlot
+from PyQt6.QtGui import QKeySequence, QIcon, QFont, QPalette, QColor, QShortcut
 
 from .config import Config
 from .exceptions import HyprRiceError
@@ -28,6 +28,7 @@ from .gui.tabs import (
 )
 from .gui.preview import PreviewWindow
 from .gui.theme_manager import ThemeManager
+from .gui.modern_theme import ModernTheme
 from .gui.theme_editor import ThemeEditorDialog
 from .gui.preferences import PreferencesDialog
 from .gui.backup_manager import BackupSelectionDialog
@@ -81,6 +82,7 @@ class HyprRiceGUI(QMainWindow):
         
         # Initialize managers
         self.theme_manager = ThemeManager(themes_dir=os.path.join(os.path.dirname(__file__), '../../themes'))
+        self.modern_theme = ModernTheme()
         
         # Initialize enhanced plugin system with security settings
         plugins_dir = Path(__file__).parent.parent.parent / "plugins"
@@ -121,6 +123,10 @@ class HyprRiceGUI(QMainWindow):
         
         # Load default plugins after UI setup
         self.load_default_plugins()
+        
+        # Apply modern theme
+        self.modern_theme.set_theme(self.config.gui.theme)
+        self.modern_theme.apply_to_application(QApplication.instance())
         
         # Start performance monitoring (if enabled)
         from .performance import _auto_monitoring_enabled
@@ -230,11 +236,11 @@ class HyprRiceGUI(QMainWindow):
                 "• Create a backup of your current configuration\n"
                 "• Preserve all your existing settings\n\n"
                 "Would you like to migrate now?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.Yes
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
             )
             
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 # Run migration in background
                 def migration_operation():
                     return migrate_config(create_backup=True)
@@ -385,7 +391,7 @@ class HyprRiceGUI(QMainWindow):
     def show_error_dialog(self, title: str, message: str, details: str = ""):
         """Show enhanced error dialog with details."""
         msg_box = QMessageBox(self)
-        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setIcon(QMessageBox.Icon.Critical)
         msg_box.setWindowTitle(title)
         msg_box.setText(message)
         
@@ -393,13 +399,13 @@ class HyprRiceGUI(QMainWindow):
             msg_box.setDetailedText(details)
         
         # Add helpful buttons
-        msg_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Help)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Help)
         
         # Connect help button
-        if msg_box.clickedButton(msg_box.button(QMessageBox.Help)):
+        if msg_box.clickedButton(msg_box.button(QMessageBox.StandardButton.Help)):
             self.show_help()
         
-        msg_box.exec_()
+        msg_box.exec()
     
     def show_success_notification(self, message: str, timeout: int = 3000):
         """Show success notification in status bar."""
@@ -475,7 +481,7 @@ class HyprRiceGUI(QMainWindow):
         main_layout = QHBoxLayout(central_widget)
         
         # Create splitter for sidebar and main content
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(splitter)
         
         # Sidebar
@@ -490,7 +496,7 @@ class HyprRiceGUI(QMainWindow):
     def setup_sidebar(self, parent):
         """Setup the sidebar with navigation."""
         sidebar = QFrame()
-        sidebar.setFrameStyle(QFrame.StyledPanel)
+        sidebar.setFrameStyle(QFrame.Shape.StyledPanel)
         sidebar.setMaximumWidth(250)
         sidebar.setMinimumWidth(150)
         
@@ -498,8 +504,8 @@ class HyprRiceGUI(QMainWindow):
         
         # Title
         title = QLabel("HyprRice")
-        title.setFont(QFont("Arial", 16, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
+        title.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
         
         # Navigation tree
@@ -738,6 +744,11 @@ class HyprRiceGUI(QMainWindow):
             # Auto-detect theme based on system
             theme = self.detect_system_theme()
         
+        # Apply modern theme
+        self.modern_theme.set_theme(theme)
+        self.modern_theme.apply_to_application(QApplication.instance())
+        
+        # Apply legacy theme manager if needed
         self.theme_manager.apply_theme(self, theme)
     
     def detect_system_theme(self) -> str:
@@ -789,7 +800,7 @@ class HyprRiceGUI(QMainWindow):
             
             # Show theme editor dialog
             dialog = ThemeEditorDialog(template, self)
-            if dialog.exec_() == dialog.Accepted:
+            if dialog.exec() == dialog.DialogCode.Accepted:
                 theme_data = dialog.get_theme_data()
                 
                 # Validate theme
@@ -928,11 +939,11 @@ class HyprRiceGUI(QMainWindow):
                     self,
                     "Import Configuration",
                     "This will replace your current configuration. Continue?",
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.No
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
                 )
                 
-                if reply == QMessageBox.Yes:
+                if reply == QMessageBox.StandardButton.Yes:
                     # Create backup first
                     self.backup_config()
                     
@@ -1020,7 +1031,7 @@ class HyprRiceGUI(QMainWindow):
         """Show preferences dialog."""
         try:
             dialog = PreferencesDialog(self.config, self)
-            if dialog.exec_() == dialog.Accepted:
+            if dialog.exec() == dialog.DialogCode.Accepted:
                 # Check if security settings changed
                 old_sandbox = getattr(self.config.security, 'enable_plugin_sandbox', True) if hasattr(self.config, 'security') else True
                 old_level = getattr(self.config.security, 'plugin_security_level', 'medium') if hasattr(self.config, 'security') else 'medium'
@@ -1070,7 +1081,7 @@ class HyprRiceGUI(QMainWindow):
             
             # Show backup selection dialog
             dialog = BackupSelectionDialog(backups, self)
-            if dialog.exec_() == dialog.Accepted:
+            if dialog.exec() == dialog.DialogCode.Accepted:
                 selected_backup = dialog.get_selected_backup()
                 if selected_backup:
                     # Confirm restore
@@ -1078,11 +1089,11 @@ class HyprRiceGUI(QMainWindow):
                         self,
                         "Restore Backup",
                         f"Restore from backup '{selected_backup.name}'?\nThis will replace your current configuration.",
-                        QMessageBox.Yes | QMessageBox.No,
-                        QMessageBox.No
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No
                     )
                     
-                    if reply == QMessageBox.Yes:
+                    if reply == QMessageBox.StandardButton.Yes:
                         # Restore backup
                         if self.backup_manager.restore_backup(selected_backup, self.config):
                             self.status_label.setText(f"Restored from: {selected_backup.name}")

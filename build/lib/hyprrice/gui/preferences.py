@@ -3,12 +3,12 @@ Preferences dialog for HyprRice
 """
 
 from typing import Dict, Any
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
     QFormLayout, QLineEdit, QSpinBox, QCheckBox, QPushButton,
     QLabel, QComboBox, QGroupBox, QSlider, QFileDialog
 )
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt
 
 
 class PreferencesDialog(QDialog):

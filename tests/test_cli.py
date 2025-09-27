@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from hyprrice.cli import (
     build_parser, dispatch, cmd_doctor, cmd_check, cmd_migrate, 
-    cmd_plugins, cmd_gui, main
+    cmd_plugins, cmd_gui, main, _create_gui_app
 )
 
 
@@ -296,16 +296,25 @@ class TestCLI(unittest.TestCase):
             result = cmd_plugins(args)
             self.assertEqual(result, 1)
     
-    @patch('hyprrice.main_gui.QApplication')
-    @patch('hyprrice.main_gui.HyprRiceGUI')
-    def test_cmd_gui_success(self, mock_gui, mock_app):
-        """Test GUI command with success."""
-        mock_app_instance = MagicMock()
-        mock_app_instance.exec_.return_value = 0
-        mock_app.return_value = mock_app_instance
+    def test_create_gui_app_headless(self):
+        """Test GUI app creation in headless mode."""
+        # Set Qt platform plugin for headless testing
+        os.environ['QT_QPA_PLATFORM'] = 'offscreen'
         
-        mock_gui_instance = MagicMock()
-        mock_gui.return_value = mock_gui_instance
+        try:
+            app, window = _create_gui_app()
+            self.assertIsNotNone(app)
+            self.assertIsNotNone(window)
+        except Exception as e:
+            self.fail(f"GUI app creation failed: {e}")
+    
+    @patch('hyprrice.cli._create_gui_app')
+    def test_cmd_gui_success(self, mock_create_gui):
+        """Test GUI command with success."""
+        mock_app = MagicMock()
+        mock_app.exec.return_value = 0
+        mock_window = MagicMock()
+        mock_create_gui.return_value = (mock_app, mock_window)
         
         args = MagicMock()
         args.config = None

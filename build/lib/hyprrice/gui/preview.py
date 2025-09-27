@@ -5,12 +5,12 @@ Enhanced preview window with real-time updates for HyprRice
 import os
 import logging
 from typing import Dict, Any, Optional
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QScrollArea,
     QGroupBox, QGridLayout, QPushButton, QProgressBar, QTextEdit
 )
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
-from PyQt5.QtGui import QColor, QPalette, QFont, QPixmap, QPainter
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QColor, QPalette, QFont, QPixmap, QPainter
 
 
 class ColorPreview(QFrame):
@@ -21,7 +21,7 @@ class ColorPreview(QFrame):
         self.color = color
         self.label = label
         self.setFixedSize(80, 60)
-        self.setFrameStyle(QFrame.Box)
+        self.setFrameStyle(QFrame.Shape.Box)
         self.setLineWidth(1)
         self.update_color()
     
