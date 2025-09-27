@@ -44,7 +44,7 @@ class PluginConfigWidget(QWidget):
         
         # Title
         title = QLabel(f"Configure {self.plugin_name}")
-        title.setFont(QFont("", 12, QFont.Bold))
+        title.setFont(QFont("", 12, QFont.Weight.Bold))
         layout.addWidget(title)
         
         # Scroll area for config options
@@ -150,7 +150,7 @@ class PluginDetailsWidget(QWidget):
         info_layout = QFormLayout(info_group)
         
         self.name_label = QLabel()
-        self.name_label.setFont(QFont("", 12, QFont.Bold))
+        self.name_label.setFont(QFont("", 12, QFont.Weight.Bold))
         self.version_label = QLabel()
         self.author_label = QLabel()
         self.description_text = QTextEdit()
@@ -261,7 +261,7 @@ class PluginManagerDialog(QDialog):
         
         # Plugin list header
         list_header = QLabel("Available Plugins")
-        list_header.setFont(QFont("", 12, QFont.Bold))
+        list_header.setFont(QFont("", 12, QFont.Weight.Bold))
         left_layout.addWidget(list_header)
         
         # Plugin list

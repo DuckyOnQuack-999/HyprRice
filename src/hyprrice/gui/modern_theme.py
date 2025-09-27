@@ -26,40 +26,49 @@ class ModernTheme(QObject):
         }
     
     def _get_dark_theme(self) -> Dict[str, str]:
-        """Get dark theme colors."""
+        """Get dark theme colors - ultra modern and sleek."""
         return {
-            # Base colors
-            "bg_primary": "#2e3440",
-            "bg_secondary": "#3b4252", 
-            "bg_tertiary": "#434c5e",
-            "bg_hover": "#4c566a",
-            "bg_pressed": "#5e81ac",
+            # Base colors - deeper, more modern
+            "bg_primary": "#1a1a1a",
+            "bg_secondary": "#252525", 
+            "bg_tertiary": "#2a2a2a",
+            "bg_hover": "#333333",
+            "bg_pressed": "#404040",
+            "bg_elevated": "#2d2d2d",
             
-            # Text colors
-            "text_primary": "#eceff4",
-            "text_secondary": "#d8dee9",
-            "text_tertiary": "#88c0d0",
-            "text_disabled": "#4c566a",
+            # Text colors - high contrast
+            "text_primary": "#ffffff",
+            "text_secondary": "#e0e0e0",
+            "text_tertiary": "#b0b0b0",
+            "text_disabled": "#666666",
+            "text_accent": self.accent_color,
             
-            # Accent colors
+            # Accent colors - vibrant and modern
             "accent": self.accent_color,
-            "accent_hover": "#81a1c1",
-            "accent_pressed": "#5e81ac",
+            "accent_hover": "#7c9eff",
+            "accent_pressed": "#4a6bff",
+            "accent_light": "#e8f0ff",
             
-            # Status colors
-            "success": "#a3be8c",
-            "warning": "#ebcb8b", 
-            "error": "#bf616a",
-            "info": "#88c0d0",
+            # Status colors - modern palette
+            "success": "#00d4aa",
+            "warning": "#ffb800", 
+            "error": "#ff4757",
+            "info": "#3742fa",
             
-            # Border colors
-            "border": "#4c566a",
+            # Border colors - subtle but defined
+            "border": "#404040",
+            "border_light": "#333333",
             "border_focus": self.accent_color,
-            "border_hover": "#81a1c1",
+            "border_hover": "#555555",
             
-            # Shadow colors
-            "shadow": "rgba(0, 0, 0, 0.3)",
-            "shadow_hover": "rgba(0, 0, 0, 0.4)",
+            # Shadow colors - deeper shadows
+            "shadow": "rgba(0, 0, 0, 0.4)",
+            "shadow_hover": "rgba(0, 0, 0, 0.5)",
+            "shadow_light": "rgba(0, 0, 0, 0.2)",
+            
+            # Glass effect colors
+            "glass_bg": "rgba(42, 42, 42, 0.8)",
+            "glass_border": "rgba(255, 255, 255, 0.1)",
         }
     
     def _get_light_theme(self) -> Dict[str, str]:
@@ -145,20 +154,30 @@ class ModernTheme(QObject):
         colors = self.get_current_colors()
         
         return f"""
-        /* Modern HyprRice Theme */
+        /* Ultra Modern HyprRice Theme */
         QMainWindow {{
             background-color: {colors['bg_primary']};
             color: {colors['text_primary']};
+            border: none;
         }}
         
-        /* Sidebar */
+        /* Sidebar with glass effect */
         QFrame {{
             background-color: {colors['bg_secondary']};
-            border: 1px solid {colors['border']};
-            border-radius: 8px;
+            border: 1px solid {colors['border_light']};
+            border-radius: 12px;
+            margin: 8px;
         }}
         
-        /* Navigation Tree */
+        /* Glass effect panels */
+        QFrame[class="glass"] {{
+            background-color: {colors['glass_bg']};
+            border: 1px solid {colors['glass_border']};
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }}
+        
+        /* Navigation Tree - Modern */
         QTreeWidget {{
             background-color: {colors['bg_secondary']};
             color: {colors['text_primary']};
@@ -166,74 +185,99 @@ class ModernTheme(QObject):
             outline: none;
             selection-background-color: {colors['accent']};
             selection-color: {colors['text_primary']};
+            border-radius: 8px;
+            padding: 4px;
         }}
         
         QTreeWidget::item {{
-            padding: 8px;
-            border-radius: 4px;
+            padding: 12px 16px;
+            border-radius: 8px;
             margin: 2px;
+            border: none;
         }}
         
         QTreeWidget::item:hover {{
             background-color: {colors['bg_hover']};
+            color: {colors['text_primary']};
         }}
         
         QTreeWidget::item:selected {{
             background-color: {colors['accent']};
             color: {colors['text_primary']};
+            font-weight: 600;
         }}
         
-        /* Tabs */
+        QTreeWidget::item:selected:hover {{
+            background-color: {colors['accent_hover']};
+        }}
+        
+        /* Tabs - Ultra Modern */
         QTabWidget::pane {{
-            border: 1px solid {colors['border']};
-            border-radius: 8px;
+            border: 1px solid {colors['border_light']};
+            border-radius: 16px;
             background-color: {colors['bg_primary']};
+            margin-top: -1px;
         }}
         
         QTabBar::tab {{
             background-color: {colors['bg_secondary']};
             color: {colors['text_secondary']};
-            padding: 12px 20px;
-            margin-right: 2px;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-            border: 1px solid {colors['border']};
+            padding: 16px 24px;
+            margin-right: 4px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            border: 1px solid {colors['border_light']};
             border-bottom: none;
+            font-weight: 500;
+            min-width: 120px;
         }}
         
         QTabBar::tab:selected {{
             background-color: {colors['bg_primary']};
             color: {colors['text_primary']};
-            border-bottom: 2px solid {colors['accent']};
+            border-bottom: 3px solid {colors['accent']};
+            font-weight: 600;
         }}
         
         QTabBar::tab:hover {{
             background-color: {colors['bg_hover']};
             color: {colors['text_primary']};
+            border-color: {colors['border_hover']};
         }}
         
-        /* Buttons */
+        QTabBar::tab:selected:hover {{
+            background-color: {colors['bg_primary']};
+        }}
+        
+        /* Buttons - Ultra Modern */
         QPushButton {{
             background-color: {colors['accent']};
             color: {colors['text_primary']};
             border: none;
-            border-radius: 6px;
-            padding: 10px 16px;
-            font-weight: 500;
-            min-height: 20px;
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-weight: 600;
+            min-height: 24px;
+            font-size: 14px;
+            box-shadow: 0 2px 8px {colors['shadow_light']};
         }}
         
         QPushButton:hover {{
             background-color: {colors['accent_hover']};
+            box-shadow: 0 4px 12px {colors['shadow']};
+            transform: translateY(-1px);
         }}
         
         QPushButton:pressed {{
             background-color: {colors['accent_pressed']};
+            box-shadow: 0 1px 4px {colors['shadow']};
+            transform: translateY(0px);
         }}
         
         QPushButton:disabled {{
             background-color: {colors['bg_tertiary']};
             color: {colors['text_disabled']};
+            box-shadow: none;
         }}
         
         /* Secondary buttons */
@@ -241,26 +285,48 @@ class ModernTheme(QObject):
             background-color: {colors['bg_secondary']};
             color: {colors['text_primary']};
             border: 1px solid {colors['border']};
+            box-shadow: 0 2px 4px {colors['shadow_light']};
         }}
         
         QPushButton[class="secondary"]:hover {{
             background-color: {colors['bg_hover']};
             border-color: {colors['border_hover']};
+            box-shadow: 0 4px 8px {colors['shadow']};
         }}
         
-        /* Input fields */
+        /* Ghost buttons */
+        QPushButton[class="ghost"] {{
+            background-color: transparent;
+            color: {colors['text_secondary']};
+            border: 1px solid {colors['border']};
+        }}
+        
+        QPushButton[class="ghost"]:hover {{
+            background-color: {colors['bg_hover']};
+            color: {colors['text_primary']};
+            border-color: {colors['accent']};
+        }}
+        
+        /* Input fields - Modern */
         QLineEdit, QTextEdit, QPlainTextEdit {{
             background-color: {colors['bg_secondary']};
             color: {colors['text_primary']};
             border: 1px solid {colors['border']};
-            border-radius: 6px;
-            padding: 8px 12px;
+            border-radius: 12px;
+            padding: 12px 16px;
             selection-background-color: {colors['accent']};
+            font-size: 14px;
         }}
         
         QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
             border-color: {colors['border_focus']};
+            border-width: 2px;
             outline: none;
+            box-shadow: 0 0 0 3px {colors['accent_light']};
+        }}
+        
+        QLineEdit:hover, QTextEdit:hover, QPlainTextEdit:hover {{
+            border-color: {colors['border_hover']};
         }}
         
         /* Combo boxes */
@@ -432,42 +498,65 @@ class ModernTheme(QObject):
             padding: 6px 8px;
         }}
         
-        /* Group boxes */
+        /* Group boxes - Modern */
         QGroupBox {{
             color: {colors['text_primary']};
-            border: 1px solid {colors['border']};
-            border-radius: 8px;
-            margin-top: 10px;
-            padding-top: 10px;
+            border: 1px solid {colors['border_light']};
+            border-radius: 16px;
+            margin-top: 16px;
+            padding-top: 16px;
+            background-color: {colors['bg_elevated']};
+            font-weight: 600;
         }}
         
         QGroupBox::title {{
             subcontrol-origin: margin;
-            left: 10px;
-            padding: 0 8px 0 8px;
+            left: 16px;
+            padding: 0 12px 0 12px;
             background-color: {colors['bg_primary']};
+            color: {colors['text_accent']};
+            font-size: 14px;
+            font-weight: 700;
         }}
         
-        /* Labels */
+        /* Labels - Modern Typography */
         QLabel {{
             color: {colors['text_primary']};
+            font-size: 14px;
         }}
         
         QLabel[class="title"] {{
-            font-size: 16px;
-            font-weight: bold;
+            font-size: 24px;
+            font-weight: 700;
             color: {colors['text_primary']};
+            letter-spacing: -0.5px;
         }}
         
         QLabel[class="subtitle"] {{
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 18px;
+            font-weight: 600;
             color: {colors['text_secondary']};
+            letter-spacing: -0.25px;
         }}
         
         QLabel[class="caption"] {{
             font-size: 12px;
+            font-weight: 500;
             color: {colors['text_tertiary']};
+            letter-spacing: 0.25px;
+        }}
+        
+        QLabel[class="heading"] {{
+            font-size: 16px;
+            font-weight: 600;
+            color: {colors['text_primary']};
+        }}
+        
+        QLabel[class="body"] {{
+            font-size: 14px;
+            font-weight: 400;
+            color: {colors['text_secondary']};
+            line-height: 1.5;
         }}
         
         /* Success, warning, error states */

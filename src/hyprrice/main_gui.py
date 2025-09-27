@@ -124,8 +124,9 @@ class HyprRiceGUI(QMainWindow):
         # Load default plugins after UI setup
         self.load_default_plugins()
         
-        # Apply modern theme
-        self.modern_theme.set_theme(self.config.gui.theme)
+        # Apply modern theme with ultra-modern styling
+        self.modern_theme.set_accent_color("#6366f1")  # Modern indigo accent
+        self.modern_theme.set_theme("dark")  # Force dark theme for sleek look
         self.modern_theme.apply_to_application(QApplication.instance())
         
         # Start performance monitoring (if enabled)
