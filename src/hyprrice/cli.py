@@ -183,6 +183,47 @@ Examples:
         help='Name of plugin to disable'
     )
     
+    # AI Workflow command
+    ai_parser = subparsers.add_parser(
+        'ai',
+        help='AI-powered component enhancement workflow'
+    )
+    ai_parser.add_argument(
+        'component_path',
+        type=str,
+        help='Path to component file to enhance'
+    )
+    ai_parser.add_argument(
+        'component_name',
+        type=str,
+        help='Name of the component'
+    )
+    ai_parser.add_argument(
+        'prompt',
+        type=str,
+        help='Enhancement prompt describing what to improve'
+    )
+    ai_parser.add_argument(
+        '--reference-image',
+        type=str,
+        help='Path to reference image for GUI design'
+    )
+    ai_parser.add_argument(
+        '--output',
+        type=str,
+        help='Output file path (default: overwrite original)'
+    )
+    ai_parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Show what would be changed without making changes'
+    )
+    ai_parser.add_argument(
+        '--verbose',
+        action='store_true',
+        help='Enable verbose output'
+    )
+    
     return parser
 
 
@@ -471,6 +512,88 @@ def cmd_plugins(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_ai(args: argparse.Namespace) -> int:
+    """Execute AI workflow for component enhancement."""
+    try:
+        from hyprrice.ai_workflow import AIWorkflowEngine
+        
+        # Validate inputs
+        if not os.path.exists(args.component_path):
+            print(f"❌ Component file not found: {args.component_path}")
+            return 1
+        
+        if not args.component_name.strip():
+            print("❌ Component name cannot be empty")
+            return 1
+        
+        if not args.prompt.strip():
+            print("❌ Enhancement prompt cannot be empty")
+            return 1
+        
+        # Load config
+        config = Config.load(args.config) if args.config else Config()
+        
+        # Create AI workflow engine
+        workflow_engine = AIWorkflowEngine(config)
+        
+        print("🚀 Starting AI Component Enhancement Workflow")
+        print(f"📁 Component: {args.component_path}")
+        print(f"🏷️  Name: {args.component_name}")
+        print(f"💭 Prompt: {args.prompt}")
+        
+        if args.reference_image:
+            print(f"🖼️  Reference Image: {args.reference_image}")
+        
+        if args.dry_run:
+            print("🔍 DRY RUN MODE - No changes will be made")
+        
+        # Execute workflow
+        result = workflow_engine.ai_component_pipeline(
+            args.component_path,
+            args.component_name,
+            args.prompt,
+            args.reference_image
+        )
+        
+        # Display results
+        print("\n" + "="*60)
+        print("📊 AI WORKFLOW RESULTS")
+        print("="*60)
+        
+        if result.success:
+            print("✅ Workflow completed successfully!")
+            print(f"⏱️  Execution time: {result.execution_time:.2f} seconds")
+            print(f"📈 Performance improvement: {result.performance_improvement:.2%}")
+            
+            if result.changes_applied:
+                print("\n🔧 Changes Applied:")
+                for change in result.changes_applied:
+                    print(f"  • {change}")
+            
+            if args.output and args.output != args.component_path:
+                # Copy to output location
+                import shutil
+                shutil.copy2(args.component_path, args.output)
+                print(f"\n📄 Enhanced component saved to: {args.output}")
+            
+        else:
+            print("❌ Workflow failed!")
+            if result.error_log:
+                print("\n🚨 Errors:")
+                for error in result.error_log:
+                    print(f"  • {error}")
+        
+        return 0 if result.success else 1
+        
+    except ImportError as e:
+        print(f"❌ Error importing AI workflow components: {e}")
+        print("Make sure all dependencies are installed: pip install -r requirements.txt")
+        return 1
+    except Exception as e:
+        print(f"❌ Error executing AI workflow: {e}")
+        return 1
+
+
 def dispatch(args: argparse.Namespace) -> int:
     """Dispatch command to appropriate handler."""
     if not args.command:
@@ -488,6 +611,7 @@ def dispatch(args: argparse.Namespace) -> int:
         'check': cmd_check,
         'migrate': cmd_migrate,
         'plugins': cmd_plugins,
+        'ai': cmd_ai,
     }
     
     handler = command_map.get(args.command)

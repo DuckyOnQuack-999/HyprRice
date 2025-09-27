@@ -11,16 +11,24 @@ __email__ = "hyprrice@example.com"
 __description__ = "Comprehensive Hyprland Ecosystem Ricing Tool"
 
 from .config import Config
-from .main_gui import HyprRiceGUI
 from .utils import setup_logging, check_dependencies
 
-# Create HyprRice as an alias to the main GUI for backward compatibility
-HyprRice = HyprRiceGUI
+# Import GUI components conditionally to avoid PyQt6 dependency issues
+try:
+    from .main_gui import HyprRiceGUI
+    # Create HyprRice as an alias to the main GUI for backward compatibility
+    HyprRice = HyprRiceGUI
+    GUI_AVAILABLE = True
+except ImportError:
+    HyprRiceGUI = None
+    HyprRice = None
+    GUI_AVAILABLE = False
 
 __all__ = [
     "Config",
-    "HyprRiceGUI",
-    "HyprRice", 
     "setup_logging",
     "check_dependencies",
-] 
+]
+
+if GUI_AVAILABLE:
+    __all__.extend(["HyprRiceGUI", "HyprRice"]) 

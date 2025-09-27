@@ -44,6 +44,15 @@ HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland c
 - Performance optimized for low resource usage
 - Full Wayland compatibility
 
+### 🤖 **AI-Powered Enhancement**
+- **AI Workflow System**: Automated component enhancement pipeline
+- **Research Phase**: Web-based research and best practices analysis
+- **Code Analysis**: Logic mapping, missing functionality detection
+- **Smart Integration**: Automated code improvements and feature additions
+- **GUI Design**: AI-assisted interface design and enhancement
+- **Testing & Validation**: Automated testing and performance optimization
+- **CLI & GUI Integration**: Both command-line and graphical interfaces
+
 ### 🆕 **What's New in v1.0.0**
 - **PyQt6 Migration**: Upgraded to PyQt6 for modern, sleek UI with better Wayland support
 - **Modern Theme System**: New QSS-based theming with dark/light modes and accent colors
@@ -140,6 +149,9 @@ hyprrice plugins list
 
 # Migrate configuration (if needed)
 hyprrice migrate
+
+# Use AI workflow to enhance components
+hyprrice ai --help
 ```
 
 ## 🚀 Quick Start
@@ -160,6 +172,21 @@ hyprrice migrate
 See the [Quick Start Guide](docs/tutorials/quick_start.md) or the [User Guide](docs/user_guide.md) for detailed instructions.
 
 ## 🎨 Usage Examples
+
+### AI Workflow Enhancement
+```bash
+# Enhance a component using AI workflow
+hyprrice ai /path/to/component.py "MyComponent" "Add error handling and logging"
+
+# With reference image for GUI design
+hyprrice ai /path/to/component.py "MyComponent" "Improve GUI and add features" --reference-image design.png
+
+# Dry run to see what would be changed
+hyprrice ai /path/to/component.py "MyComponent" "Add validation" --dry-run
+
+# Save enhanced component to new file
+hyprrice ai /path/to/component.py "MyComponent" "Add features" --output /path/to/enhanced.py
+```
 
 ### Basic Animation Setup
 ```python

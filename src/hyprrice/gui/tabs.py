@@ -4,6 +4,7 @@ from ..hyprland.animations import AnimationManager
 from ..hyprland.windows import WindowManager
 from ..utils import backup_file, restore_file, parse_hyprland_config, write_hyprland_config
 from ..plugins import PluginManager
+from .ai_workflow_tab import AIWorkflowTab
 import os
 import copy
 import json
