@@ -222,9 +222,11 @@ class HyprlandTab(BaseTab):
             # Check if file exists and add status indicator
             from ..utils import validate_sourced_file
             if validate_sourced_file(file_path):
-                item.setIcon(self.style().standardIcon(self.style().SP_DialogApplyButton))
+                from PyQt6.QtWidgets import QStyle
+                item.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogApplyButton))
             else:
-                item.setIcon(self.style().standardIcon(self.style().SP_MessageBoxWarning))
+                from PyQt6.QtWidgets import QStyle
+                item.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxWarning))
             self.sourced_files_list.addItem(item)
 
     def _add_sourced_file(self):

@@ -496,7 +496,7 @@ class HyprRiceGUI(QMainWindow):
     def setup_sidebar(self, parent):
         """Setup the sidebar with navigation."""
         sidebar = QFrame()
-        sidebar.setFrameStyle(QFrame.StyledPanel)
+        sidebar.setFrameStyle(QFrame.Shape.StyledPanel)
         sidebar.setMaximumWidth(250)
         sidebar.setMinimumWidth(150)
         
