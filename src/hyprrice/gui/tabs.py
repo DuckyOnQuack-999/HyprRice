@@ -773,7 +773,7 @@ class ThemesTab(BaseTab):
     def _import_theme(self):
         """Import a theme from file."""
         try:
-            from PyQt5.QtWidgets import QFileDialog
+            from PyQt6.QtWidgets import QFileDialog
             
             file_path, _ = QFileDialog.getOpenFileName(
                 self, 
@@ -795,7 +795,7 @@ class ThemesTab(BaseTab):
     def _export_theme(self):
         """Export current configuration as theme."""
         try:
-            from PyQt5.QtWidgets import QFileDialog
+            from PyQt6.QtWidgets import QFileDialog
             
             file_path, _ = QFileDialog.getSaveFileName(
                 self,

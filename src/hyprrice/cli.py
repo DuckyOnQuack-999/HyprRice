@@ -15,7 +15,7 @@ from typing import Dict, List, Optional, Any
 import logging
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from hyprrice.config import Config
 from hyprrice.utils import check_dependencies, setup_logging

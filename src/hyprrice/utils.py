@@ -195,7 +195,7 @@ def check_dependencies() -> Dict[str, Any]:
     
     # Check Python dependencies
     python_deps = {
-        'PyQt5': 'PyQt5',
+        'PyQt6': 'PyQt6',
         'PyYAML': 'yaml',
         'psutil': 'psutil'
     }

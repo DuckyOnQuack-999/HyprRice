@@ -33,6 +33,7 @@ from .gui.theme_editor import ThemeEditorDialog
 from .gui.preferences import PreferencesDialog
 from .gui.backup_manager import BackupSelectionDialog
 from .gui.plugin_manager import PluginManagerDialog
+from .gui.enhanced_main import EnhancedMainWindow
 from .plugins import EnhancedPluginManager
 from .performance import performance_monitor, profile
 
@@ -75,10 +76,11 @@ class HyprRiceGUI(QMainWindow):
     
     config_changed = pyqtSignal()
     
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, use_enhanced_ui: bool = True):
         super().__init__()
         self.config = config
         self.logger = logging.getLogger(__name__)
+        self.use_enhanced_ui = use_enhanced_ui
         
         # Initialize managers
         self.theme_manager = ThemeManager(themes_dir=os.path.join(os.path.dirname(__file__), '../../themes'))
@@ -111,10 +113,13 @@ class HyprRiceGUI(QMainWindow):
         # Setup global error boundary
         self.setup_global_error_handler()
         
-        self.setup_ui()
-        self.setup_menu()
-        self.setup_shortcuts()
-        self.setup_status_bar()
+        if self.use_enhanced_ui:
+            self.setup_enhanced_ui()
+        else:
+            self.setup_ui()
+            self.setup_menu()
+            self.setup_shortcuts()
+            self.setup_status_bar()
         
         # Check first-run and migration (after UI is set up)
         self.check_startup_requirements()
@@ -468,6 +473,15 @@ class HyprRiceGUI(QMainWindow):
         
         return wrapper
 
+    def setup_enhanced_ui(self):
+        """Setup enhanced modern UI."""
+        # Create enhanced main window
+        self.enhanced_window = EnhancedMainWindow(self.config)
+        self.enhanced_window.show()
+        
+        # Hide the original window
+        self.hide()
+    
     def setup_ui(self):
         """Setup the main user interface."""
         self.setWindowTitle("HyprRice - Hyprland Configuration Tool")

@@ -1,483 +1,273 @@
 """
-Enhanced preview window with real-time updates for HyprRice
+Live preview system for HyprRice themes and configurations.
 """
 
 import os
-import logging
+import tempfile
+import subprocess
+from pathlib import Path
 from typing import Dict, Any, Optional
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QScrollArea,
-    QGroupBox, QGridLayout, QPushButton, QProgressBar, QTextEdit
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+    QFrame, QScrollArea, QSizePolicy, QMessageBox, QProgressBar
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QPalette, QFont, QPixmap, QPainter
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, pyqtSlot
+from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QPen
+
+from ..config import Config
+from ..utils import hyprctl, get_monitors, get_workspaces, get_windows
 
 
-class ColorPreview(QFrame):
-    """A widget that shows a color preview."""
+class PreviewRenderer(QThread):
+    """Background thread for rendering preview images."""
     
-    def __init__(self, color: str = "#000000", label: str = "Color"):
+    preview_ready = pyqtSignal(QPixmap)
+    error_occurred = pyqtSignal(str)
+    
+    def __init__(self, config: Config, width: int = 800, height: int = 600):
         super().__init__()
-        self.color = color
-        self.label = label
-        self.setFixedSize(80, 60)
-        self.setFrameStyle(QFrame.Shape.Box)
-        self.setLineWidth(1)
-        self.update_color()
+        self.config = config
+        self.width = width
+        self.height = height
+        self.cancelled = False
     
-    def set_color(self, color: str):
-        """Set the preview color."""
-        self.color = color
-        self.update_color()
-    
-    def update_color(self):
-        """Update the color display."""
+    def run(self):
+        """Render the preview image."""
         try:
-            self.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {self.color};
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                }}
-            """)
-            self.setToolTip(f"{self.label}: {self.color}")
-        except:
-            self.setStyleSheet("background-color: #fff; border: 1px solid red;")
-            self.setToolTip(f"{self.label}: Invalid color")
+            if self.cancelled:
+                return
+            
+            # Create a pixmap for the preview
+            pixmap = QPixmap(self.width, self.height)
+            pixmap.fill(QColor("#2e3440"))  # Default background
+            
+            painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            
+            # Render the preview based on current config
+            self._render_hyprland_preview(painter)
+            
+            painter.end()
+            
+            if not self.cancelled:
+                self.preview_ready.emit(pixmap)
+                
+        except Exception as e:
+            if not self.cancelled:
+                self.error_occurred.emit(str(e))
+    
+    def _render_hyprland_preview(self, painter: QPainter):
+        """Render Hyprland-specific preview elements."""
+        # Draw desktop background
+        bg_color = QColor(self.config.hyprland.border_color if hasattr(self.config.hyprland, 'border_color') else "#2e3440")
+        painter.fillRect(0, 0, self.width, self.height, bg_color)
+        
+        # Draw waybar
+        self._render_waybar(painter)
+        
+        # Draw windows
+        self._render_windows(painter)
+        
+        # Draw workspaces
+        self._render_workspaces(painter)
+    
+    def _render_waybar(self, painter: QPainter):
+        """Render waybar preview."""
+        waybar_height = getattr(self.config.waybar, 'height', 30)
+        waybar_bg = QColor(getattr(self.config.waybar, 'background_color', 'rgba(43, 48, 59, 0.5)'))
+        
+        # Draw waybar background
+        painter.fillRect(0, 0, self.width, waybar_height, waybar_bg)
+        
+        # Draw waybar modules
+        font = QFont("JetBrainsMono Nerd Font", 10)
+        painter.setFont(font)
+        painter.setPen(QColor(getattr(self.config.waybar, 'text_color', '#ffffff')))
+        
+        # Draw clock
+        painter.drawText(10, waybar_height - 5, "12:34")
+        
+        # Draw battery
+        painter.drawText(self.width - 100, waybar_height - 5, "100%")
+    
+    def _render_windows(self, painter: QPainter):
+        """Render window previews."""
+        # Draw some example windows
+        windows = [
+            {"x": 50, "y": 80, "width": 300, "height": 200, "title": "Terminal"},
+            {"x": 400, "y": 80, "width": 300, "height": 200, "title": "Browser"},
+            {"x": 50, "y": 320, "width": 650, "height": 200, "title": "Code Editor"}
+        ]
+        
+        for window in windows:
+            # Window background
+            painter.fillRect(window["x"], window["y"], window["width"], window["height"], 
+                           QColor("#3b4252"))
+            
+            # Window border
+            border_size = getattr(self.config.hyprland, 'border_size', 1)
+            border_color = QColor(getattr(self.config.hyprland, 'border_color', '#ffffff'))
+            painter.setPen(QPen(border_color, border_size))
+            painter.drawRect(window["x"], window["y"], window["width"], window["height"])
+            
+            # Title bar
+            title_height = 25
+            painter.fillRect(window["x"], window["y"], window["width"], title_height, 
+                           QColor("#4c566a"))
+            
+            # Title text
+            font = QFont("Inter", 10)
+            painter.setFont(font)
+            painter.setPen(QColor("#eceff4"))
+            painter.drawText(window["x"] + 10, window["y"] + 18, window["title"])
+    
+    def _render_workspaces(self, painter: QPainter):
+        """Render workspace indicators."""
+        # Draw workspace indicators at the bottom
+        workspace_count = 5
+        indicator_size = 8
+        spacing = 15
+        start_x = (self.width - (workspace_count * indicator_size + (workspace_count - 1) * spacing)) // 2
+        start_y = self.height - 30
+        
+        for i in range(workspace_count):
+            x = start_x + i * (indicator_size + spacing)
+            color = QColor("#5e81ac") if i == 0 else QColor("#4c566a")  # First workspace active
+            painter.fillRect(x, start_y, indicator_size, indicator_size, color)
+    
+    def cancel(self):
+        """Cancel the rendering operation."""
+        self.cancelled = True
 
 
 class PreviewWindow(QWidget):
-    """Enhanced preview window showing live configuration preview."""
+    """Live preview window for HyprRice configurations."""
     
-    # Signals
-    config_applied = pyqtSignal(str)  # Emitted when config is applied
-    
-    def __init__(self, config):
+    def __init__(self, config: Config):
         super().__init__()
         self.config = config
-        self.logger = logging.getLogger(__name__)
-        
-        # Import managers
-        from ..hyprland.windows import WindowManager
-        from ..hyprland.display import DisplayManager
-        from ..hyprland.input import InputManager
-        from ..hyprland.workspaces import WorkspaceManager
-        
-        # Initialize managers
-        hyprland_config_path = getattr(config.paths, 'hyprland_config', '~/.config/hypr/hyprland.conf')
-        self.window_manager = WindowManager(os.path.expanduser(hyprland_config_path))
-        self.display_manager = DisplayManager(os.path.expanduser(hyprland_config_path))
-        self.input_manager = InputManager(os.path.expanduser(hyprland_config_path))
-        self.workspace_manager = WorkspaceManager(os.path.expanduser(hyprland_config_path))
-        
-        self.setWindowTitle("HyprRice - Live Preview")
-        self.setGeometry(100, 100, 800, 600)
-        
-        # Update timer
-        self.update_timer = QTimer()
-        self.update_timer.timeout.connect(self.update_preview)
-        
-        # Auto-refresh settings
-        self.auto_refresh = True
-        self.refresh_interval = 2000  # 2 seconds
-        
+        self.renderer: Optional[PreviewRenderer] = None
         self.setup_ui()
-        self.start_auto_refresh()
+        self.setup_timer()
     
     def setup_ui(self):
-        """Setup the user interface."""
+        """Setup the preview window UI."""
+        self.setWindowTitle("HyprRice Live Preview")
+        self.setGeometry(100, 100, 900, 700)
+        
         layout = QVBoxLayout(self)
         
-        # Title and controls
+        # Header
         header_layout = QHBoxLayout()
-        
-        title_label = QLabel("Live Configuration Preview")
-        title_label.setFont(QFont("Arial", 12, QFont.Bold))
+        title_label = QLabel("Live Preview")
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #eceff4;")
         header_layout.addWidget(title_label)
         
         header_layout.addStretch()
         
-        # Refresh button
-        self.refresh_button = QPushButton("Refresh Now")
-        self.refresh_button.clicked.connect(self.update_preview)
-        header_layout.addWidget(self.refresh_button)
+        # Control buttons
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.clicked.connect(self.update_preview)
+        header_layout.addWidget(refresh_btn)
         
-        # Auto-refresh toggle
-        self.auto_refresh_button = QPushButton("Auto-Refresh: ON")
-        self.auto_refresh_button.clicked.connect(self.toggle_auto_refresh)
-        header_layout.addWidget(self.auto_refresh_button)
-        
-        # Apply to Hyprland button
-        self.apply_button = QPushButton("Apply to Hyprland")
-        self.apply_button.clicked.connect(self.apply_to_hyprland)
-        self.apply_button.setStyleSheet("QPushButton { background-color: #4CAF50; color: white; font-weight: bold; }")
-        header_layout.addWidget(self.apply_button)
+        export_btn = QPushButton("Export")
+        export_btn.clicked.connect(self.export_preview)
+        header_layout.addWidget(export_btn)
         
         layout.addLayout(header_layout)
         
-        # Progress bar for operations
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
-        layout.addWidget(self.progress_bar)
+        # Preview area
+        self.preview_scroll = QScrollArea()
+        self.preview_scroll.setWidgetResizable(True)
+        self.preview_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.preview_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         
-        # Scroll area for content
-        scroll_area = QScrollArea()
-        scroll_widget = QWidget()
-        self.content_layout = QVBoxLayout(scroll_widget)
+        self.preview_label = QLabel()
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview_label.setMinimumSize(800, 600)
+        self.preview_label.setStyleSheet("background-color: #2e3440; border: 1px solid #4c566a;")
         
-        # Create preview sections
-        self.create_theme_preview()
-        self.create_hyprland_preview()
-        self.create_waybar_preview()
-        self.create_system_info()
-        
-        scroll_area.setWidget(scroll_widget)
-        scroll_area.setWidgetResizable(True)
-        layout.addWidget(scroll_area)
+        self.preview_scroll.setWidget(self.preview_label)
+        layout.addWidget(self.preview_scroll)
         
         # Status bar
         self.status_label = QLabel("Ready")
-        self.status_label.setStyleSheet("QLabel { padding: 5px; background-color: #f0f0f0; }")
+        self.status_label.setStyleSheet("color: #88c0d0; padding: 5px;")
         layout.addWidget(self.status_label)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setVisible(False)
+        layout.addWidget(self.progress_bar)
     
-    def create_theme_preview(self):
-        """Create theme preview section."""
-        theme_group = QGroupBox("Current Theme")
-        theme_layout = QVBoxLayout(theme_group)
-        
-        # Theme info
-        self.theme_info_label = QLabel("Theme: Loading...")
-        theme_layout.addWidget(self.theme_info_label)
-        
-        # Color palette
-        colors_layout = QHBoxLayout()
-        colors_layout.addWidget(QLabel("Colors:"))
-        
-        self.color_previews = {}
-        color_names = ['primary', 'secondary', 'accent', 'text', 'background']
-        for color_name in color_names:
-            color_preview = ColorPreview(label=color_name.capitalize())
-            self.color_previews[color_name] = color_preview
-            colors_layout.addWidget(color_preview)
-        
-        colors_layout.addStretch()
-        theme_layout.addLayout(colors_layout)
-        
-        self.content_layout.addWidget(theme_group)
-    
-    def create_hyprland_preview(self):
-        """Create Hyprland settings preview."""
-        hyprland_group = QGroupBox("Hyprland Configuration")
-        hyprland_layout = QGridLayout(hyprland_group)
-        
-        # Window settings
-        hyprland_layout.addWidget(QLabel("Border Color:"), 0, 0)
-        self.border_color_preview = ColorPreview(label="Border")
-        hyprland_layout.addWidget(self.border_color_preview, 0, 1)
-        
-        self.gaps_label = QLabel("Gaps: Loading...")
-        hyprland_layout.addWidget(self.gaps_label, 0, 2)
-        
-        self.border_size_label = QLabel("Border Size: Loading...")
-        hyprland_layout.addWidget(self.border_size_label, 0, 3)
-        
-        # Effects settings
-        self.blur_label = QLabel("Blur: Loading...")
-        hyprland_layout.addWidget(self.blur_label, 1, 0)
-        
-        self.animations_label = QLabel("Animations: Loading...")
-        hyprland_layout.addWidget(self.animations_label, 1, 1)
-        
-        self.rounding_label = QLabel("Rounding: Loading...")
-        hyprland_layout.addWidget(self.rounding_label, 1, 2)
-        
-        self.content_layout.addWidget(hyprland_group)
-    
-    def create_waybar_preview(self):
-        """Create Waybar preview section."""
-        waybar_group = QGroupBox("Waybar Configuration")
-        waybar_layout = QVBoxLayout(waybar_group)
-        
-        # Waybar mockup
-        waybar_mockup = QFrame()
-        waybar_mockup.setFixedHeight(35)
-        waybar_mockup.setFrameStyle(QFrame.Box)
-        waybar_layout.addWidget(waybar_mockup)
-        self.waybar_mockup = waybar_mockup
-        
-        # Waybar info
-        info_layout = QHBoxLayout()
-        
-        self.waybar_bg_preview = ColorPreview(label="Background")
-        info_layout.addWidget(self.waybar_bg_preview)
-        
-        self.waybar_text_preview = ColorPreview(label="Text")
-        info_layout.addWidget(self.waybar_text_preview)
-        
-        self.waybar_info_label = QLabel("Height: Loading...")
-        info_layout.addWidget(self.waybar_info_label)
-        
-        info_layout.addStretch()
-        waybar_layout.addLayout(info_layout)
-        
-        self.content_layout.addWidget(waybar_group)
-    
-    def create_system_info(self):
-        """Create system information section."""
-        system_group = QGroupBox("System Status")
-        system_layout = QVBoxLayout(system_group)
-        
-        # System info text
-        self.system_info_text = QTextEdit()
-        self.system_info_text.setMaximumHeight(150)
-        self.system_info_text.setReadOnly(True)
-        system_layout.addWidget(self.system_info_text)
-        
-        self.content_layout.addWidget(system_group)
+    def setup_timer(self):
+        """Setup auto-refresh timer."""
+        self.refresh_timer = QTimer()
+        self.refresh_timer.timeout.connect(self.update_preview)
+        # Auto-refresh every 5 seconds
+        self.refresh_timer.start(5000)
     
     def update_preview(self):
-        """Update the preview with current configuration."""
-        try:
-            self.status_label.setText("Updating preview...")
-            self.progress_bar.setVisible(True)
-            self.progress_bar.setRange(0, 0)  # Indeterminate
-            
-            # Update theme info
-            self.update_theme_info()
-            
-            # Update Hyprland info
-            self.update_hyprland_info()
-            
-            # Update Waybar info
-            self.update_waybar_info()
-            
-            # Update system info
-            self.update_system_info()
-            
-            self.progress_bar.setVisible(False)
-            self.status_label.setText(f"Preview updated at {QTimer().currentTime().toString()}")
-            
-        except Exception as e:
-            self.progress_bar.setVisible(False)
-            self.status_label.setText(f"Update failed: {str(e)}")
-            self.logger.error(f"Preview update error: {e}")
-    
-    def update_theme_info(self):
-        """Update theme information."""
-        try:
-            theme_name = getattr(self.config, 'current_theme', 'Default')
-            self.theme_info_label.setText(f"Theme: {theme_name}")
-            
-            # Update color previews
-            if hasattr(self.config, 'colors'):
-                colors = self.config.colors
-                for color_name, preview in self.color_previews.items():
-                    color_value = getattr(colors, color_name, '#000000')
-                    preview.set_color(color_value)
-            
-        except Exception as e:
-            self.theme_info_label.setText(f"Theme: Error loading ({str(e)})")
-    
-    def update_hyprland_info(self):
-        """Update Hyprland configuration info."""
-        try:
-            # Get current Hyprland config
-            window_config = self.window_manager.get_window_config()
-            
-            # Update border color
-            border_color = window_config.get('general_col_active_border', '#5e81ac')
-            if isinstance(border_color, str):
-                self.border_color_preview.set_color(border_color)
-            
-            # Update gaps
-            gaps_in = window_config.get('general_gaps_in', 5)
-            gaps_out = window_config.get('general_gaps_out', 10)
-            self.gaps_label.setText(f"Gaps: {gaps_in}/{gaps_out}")
-            
-            # Update border size
-            border_size = window_config.get('general_border_size', 2)
-            self.border_size_label.setText(f"Border: {border_size}px")
-            
-            # Update blur
-            blur_enabled = window_config.get('decoration_blur_enabled', True)
-            blur_size = window_config.get('decoration_blur_size', 8)
-            self.blur_label.setText(f"Blur: {'On' if blur_enabled else 'Off'} ({blur_size})")
-            
-            # Update animations
-            animations = window_config.get('animations_enabled', True)
-            self.animations_label.setText(f"Animations: {'On' if animations else 'Off'}")
-            
-            # Update rounding
-            rounding = window_config.get('decoration_rounding', 8)
-            self.rounding_label.setText(f"Rounding: {rounding}px")
-            
-        except Exception as e:
-            self.gaps_label.setText(f"Hyprland: Error ({str(e)})")
-    
-    def update_waybar_info(self):
-        """Update Waybar configuration info."""
-        try:
-            if hasattr(self.config, 'waybar'):
-                waybar = self.config.waybar
-                
-                # Update colors
-                bg_color = getattr(waybar, 'background_color', 'rgba(46, 52, 64, 0.8)')
-                text_color = getattr(waybar, 'text_color', '#eceff4')
-                
-                # Convert rgba to hex for preview (simplified)
-                if bg_color.startswith('rgba'):
-                    bg_color = '#2e3440'  # Fallback
-                if text_color.startswith('rgba'):
-                    text_color = '#eceff4'  # Fallback
-                
-                self.waybar_bg_preview.set_color(bg_color)
-                self.waybar_text_preview.set_color(text_color)
-                
-                # Update waybar mockup
-                self.waybar_mockup.setStyleSheet(f"""
-            QFrame {{
-                background-color: {bg_color};
-                        border: 1px solid {text_color};
-                        border-radius: 4px;
-            }}
-        """)
+        """Update the preview image."""
+        if self.renderer and self.renderer.isRunning():
+            self.renderer.cancel()
+            self.renderer.wait()
         
-                # Update info
-                height = getattr(waybar, 'height', 30)
-                self.waybar_info_label.setText(f"Height: {height}px")
-            
-        except Exception as e:
-            self.waybar_info_label.setText(f"Waybar: Error ({str(e)})")
-    
-    def update_system_info(self):
-        """Update system information."""
-        try:
-            info_lines = []
-            
-            # Get monitor info
-            monitors = self.display_manager.get_monitors()
-            info_lines.append(f"Monitors: {len(monitors)} detected")
-            
-            # Get workspace info
-            workspaces = self.workspace_manager.get_workspaces()
-            info_lines.append(f"Workspaces: {len(workspaces)} active")
-            
-            # Get window info
-            windows = self.window_manager.get_window_list()
-            info_lines.append(f"Windows: {len(windows)} open")
-            
-            # Get input devices
-            devices = self.input_manager.get_input_devices()
-            if isinstance(devices, dict):
-                keyboard_count = len(devices.get('keyboards', []))
-                mouse_count = len(devices.get('mice', []))
-                info_lines.append(f"Input: {keyboard_count} keyboards, {mouse_count} mice")
-            else:
-                info_lines.append("Input: Device info unavailable")
-            
-            # System status
-            info_lines.append("\\nHyprland Status: " + ("✅ Running" if self.is_hyprland_running() else "❌ Not detected"))
-            
-            self.system_info_text.setPlainText("\\n".join(info_lines))
-            
-        except Exception as e:
-            self.system_info_text.setPlainText(f"System info error: {str(e)}")
-    
-    def is_hyprland_running(self) -> bool:
-        """Check if Hyprland is running."""
-        try:
-            import subprocess
-            result = subprocess.run(['pgrep', 'Hyprland'], capture_output=True)
-            return result.returncode == 0
-        except:
-            return False
-    
-    def apply_to_hyprland(self):
-        """Apply current configuration to Hyprland."""
-        try:
-            self.status_label.setText("Applying configuration to Hyprland...")
-            self.progress_bar.setVisible(True)
-            self.progress_bar.setRange(0, 100)
-            
-            success_count = 0
-            total_operations = 4
-            
-            # Apply window settings
-            if hasattr(self.config, 'hyprland'):
-                hyprland_config = {
-                    'general_border_size': getattr(self.config.hyprland, 'border_size', 2),
-                    'general_gaps_in': getattr(self.config.hyprland, 'gaps_in', 5),
-                    'general_gaps_out': getattr(self.config.hyprland, 'gaps_out', 10),
-                    'general_col_active_border': getattr(self.config.hyprland, 'border_color', '#5e81ac'),
-                }
-                
-                if self.window_manager.set_window_config(hyprland_config):
-                    success_count += 1
-            
-            self.progress_bar.setValue(25)
-            
-            # Apply display settings
-            display_config = {}
-            if self.display_manager.set_display_config(display_config):
-                success_count += 1
-            
-            self.progress_bar.setValue(50)
-            
-            # Apply input settings  
-            input_config = {}
-            if self.input_manager.set_input_config(input_config):
-                success_count += 1
-            
-            self.progress_bar.setValue(75)
-            
-            # Apply workspace settings
-            workspace_config = {}
-            if self.workspace_manager.set_workspace_config(workspace_config):
-                success_count += 1
-            
-            self.progress_bar.setValue(100)
-            
-            # Show result
-            if success_count == total_operations:
-                self.status_label.setText("✅ Configuration applied successfully!")
-                self.config_applied.emit("success")
-            else:
-                self.status_label.setText(f"⚠️ Partial success: {success_count}/{total_operations} operations")
-                self.config_applied.emit("partial")
-            
-            self.progress_bar.setVisible(False)
-            
-            # Refresh preview after applying
-            QTimer.singleShot(1000, self.update_preview)
-            
-        except Exception as e:
-            self.progress_bar.setVisible(False)
-            self.status_label.setText(f"❌ Apply failed: {str(e)}")
-            self.config_applied.emit("error")
-            self.logger.error(f"Apply to Hyprland error: {e}")
-    
-    def start_auto_refresh(self):
-        """Start auto-refresh timer."""
-        if self.auto_refresh:
-            self.update_timer.start(self.refresh_interval)
-            self.update_preview()  # Initial update
-    
-    def stop_auto_refresh(self):
-        """Stop auto-refresh timer."""
-        self.update_timer.stop()
-    
-    def toggle_auto_refresh(self):
-        """Toggle auto-refresh mode."""
-        self.auto_refresh = not self.auto_refresh
+        self.status_label.setText("Rendering preview...")
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 0)  # Indeterminate
         
-        if self.auto_refresh:
-            self.auto_refresh_button.setText("Auto-Refresh: ON")
-            self.start_auto_refresh()
-        else:
-            self.auto_refresh_button.setText("Auto-Refresh: OFF")
-            self.stop_auto_refresh()
+        self.renderer = PreviewRenderer(self.config, 800, 600)
+        self.renderer.preview_ready.connect(self.on_preview_ready)
+        self.renderer.error_occurred.connect(self.on_preview_error)
+        self.renderer.start()
+    
+    @pyqtSlot(QPixmap)
+    def on_preview_ready(self, pixmap: QPixmap):
+        """Handle preview rendering completion."""
+        self.preview_label.setPixmap(pixmap)
+        self.progress_bar.setVisible(False)
+        self.status_label.setText("Preview updated")
+        
+        # Auto-hide status after 3 seconds
+        QTimer.singleShot(3000, lambda: self.status_label.setText("Ready"))
+    
+    @pyqtSlot(str)
+    def on_preview_error(self, error: str):
+        """Handle preview rendering error."""
+        self.progress_bar.setVisible(False)
+        self.status_label.setText(f"Error: {error}")
+        
+        # Show error message
+        QMessageBox.warning(self, "Preview Error", f"Failed to render preview:\n{error}")
+    
+    def export_preview(self):
+        """Export the current preview as an image."""
+        if not self.preview_label.pixmap():
+            QMessageBox.warning(self, "No Preview", "No preview available to export.")
+            return
+        
+        from PyQt6.QtWidgets import QFileDialog
+        
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Preview",
+            "hyprrice_preview.png",
+            "PNG Images (*.png);;JPEG Images (*.jpg);;All Files (*)"
+        )
+        
+        if file_path:
+            try:
+                self.preview_label.pixmap().save(file_path)
+                QMessageBox.information(self, "Export Success", f"Preview exported to:\n{file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Export Error", f"Failed to export preview:\n{e}")
     
     def closeEvent(self, event):
         """Handle window close event."""
-        self.stop_auto_refresh()
-        super().closeEvent(event) 
+        if self.renderer and self.renderer.isRunning():
+            self.renderer.cancel()
+            self.renderer.wait()
+        
+        self.refresh_timer.stop()
+        event.accept()

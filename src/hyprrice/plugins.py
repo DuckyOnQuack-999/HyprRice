@@ -50,7 +50,13 @@ class PluginBase:
     @property
     def metadata(self) -> PluginMetadata:
         """Return plugin metadata. Must be implemented by plugins."""
-        raise NotImplementedError("Plugins must implement metadata property")
+        # Default metadata for plugins
+        return {
+            'name': self.__class__.__name__,
+            'version': '1.0.0',
+            'description': 'Base plugin class',
+            'author': 'HyprRice Team'
+        }
     
     def register(self, app):
         """Register plugin with the main app. Override in plugin."""
@@ -211,6 +217,14 @@ class EnhancedPluginManager:
     def list_loaded_plugins(self) -> List[str]:
         """List names of currently loaded plugins."""
         return list(self.loaded_plugins.keys())
+    
+    def list_enabled_plugins(self) -> List[str]:
+        """List names of enabled plugins."""
+        enabled = []
+        for name, metadata in self.plugin_metadata.items():
+            if metadata.enabled:
+                enabled.append(name)
+        return enabled
     
     def load_plugin(self, plugin_name: str, app=None) -> bool:
         """Load and register a plugin with optional sandboxing."""

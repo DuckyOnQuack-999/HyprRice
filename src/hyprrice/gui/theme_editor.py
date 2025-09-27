@@ -1,525 +1,369 @@
 """
-Theme editor dialog for HyprRice
+Theme editor dialog for creating and editing HyprRice themes.
 """
 
-import json
-import yaml
-from typing import Dict, Any
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
-    QFormLayout, QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox,
-    QCheckBox, QPushButton, QLabel, QColorDialog, QMessageBox,
-    QScrollArea, QGroupBox, QComboBox, QListWidget, QListWidgetItem
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, 
+    QLineEdit, QTextEdit, QPushButton, QDialogButtonBox,
+    QTabWidget, QWidget, QGroupBox, QSpinBox, QDoubleSpinBox,
+    QComboBox, QCheckBox, QColorDialog, QMessageBox
 )
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QPalette
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QColor
 
-
-class ColorButton(QPushButton):
-    """A button that displays and allows editing of a color."""
-    
-    def __init__(self, color: str = "#000000"):
-        super().__init__()
-        self.color = color
-        self.setFixedSize(60, 30)
-        self.clicked.connect(self.choose_color)
-        self.update_color()
-    
-    def set_color(self, color: str):
-        """Set the button color."""
-        self.color = color
-        self.update_color()
-    
-    def get_color(self) -> str:
-        """Get the current color."""
-        return self.color
-    
-    def update_color(self):
-        """Update the button appearance."""
-        try:
-            # Parse color
-            if self.color.startswith('#'):
-                qcolor = QColor(self.color)
-            elif self.color.startswith('rgb'):
-                # Simple rgb parsing
-                qcolor = QColor(self.color)
-            else:
-                qcolor = QColor(self.color)
-            
-            if qcolor.isValid():
-                # Set button style
-                self.setStyleSheet(f"background-color: {self.color}; border: 1px solid #ccc;")
-                self.setText("")
-            else:
-                self.setStyleSheet("background-color: #fff; border: 1px solid red;")
-                self.setText("Invalid")
-        except:
-            self.setStyleSheet("background-color: #fff; border: 1px solid red;")
-            self.setText("Invalid")
-    
-    def choose_color(self):
-        """Open color chooser dialog."""
-        try:
-            current = QColor(self.color) if QColor(self.color).isValid() else QColor("#000000")
-            color = QColorDialog.getColor(current, self, "Choose Color")
-            
-            if color.isValid():
-                self.color = color.name()
-                self.update_color()
-        except:
-            pass
+from typing import Dict, Any
 
 
 class ThemeEditorDialog(QDialog):
-    """Dialog for editing theme data."""
+    """Dialog for editing theme properties."""
+    
+    theme_saved = pyqtSignal(dict)
     
     def __init__(self, theme_data: Dict[str, Any], parent=None):
         super().__init__(parent)
         self.theme_data = theme_data.copy()
-        self.widgets = {}
-        
-        self.setWindowTitle("Theme Editor")
-        self.setModal(True)
-        self.resize(800, 600)
-        
         self.setup_ui()
         self.load_theme_data()
     
     def setup_ui(self):
-        """Setup the user interface."""
+        """Setup the dialog UI."""
+        self.setWindowTitle("Theme Editor")
+        self.setModal(True)
+        self.resize(600, 500)
+        
         layout = QVBoxLayout(self)
         
-        # Tab widget for different sections
+        # Create tab widget
         self.tab_widget = QTabWidget()
         layout.addWidget(self.tab_widget)
         
-        # Create tabs
-        self.create_general_tab()
-        self.create_colors_tab()
-        self.create_hyprland_tab()
-        self.create_waybar_tab()
-        self.create_rofi_tab()
+        # General tab
+        self.general_tab = self.create_general_tab()
+        self.tab_widget.addTab(self.general_tab, "General")
+        
+        # Hyprland tab
+        self.hyprland_tab = self.create_hyprland_tab()
+        self.tab_widget.addTab(self.hyprland_tab, "Hyprland")
+        
+        # Waybar tab
+        self.waybar_tab = self.create_waybar_tab()
+        self.tab_widget.addTab(self.waybar_tab, "Waybar")
+        
+        # Rofi tab
+        self.rofi_tab = self.create_rofi_tab()
+        self.tab_widget.addTab(self.rofi_tab, "Rofi")
         
         # Buttons
-        button_layout = QHBoxLayout()
-        
-        self.preview_button = QPushButton("Preview")
-        self.preview_button.clicked.connect(self.preview_theme)
-        button_layout.addWidget(self.preview_button)
-        
-        button_layout.addStretch()
-        
-        self.ok_button = QPushButton("OK")
-        self.ok_button.clicked.connect(self.accept)
-        button_layout.addWidget(self.ok_button)
-        
-        self.cancel_button = QPushButton("Cancel")
-        self.cancel_button.clicked.connect(self.reject)
-        button_layout.addWidget(self.cancel_button)
-        
-        layout.addLayout(button_layout)
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
     
-    def create_general_tab(self):
-        """Create the general information tab."""
-        tab = QWidget()
-        layout = QFormLayout(tab)
-        
-        # Theme name
-        self.widgets['name'] = QLineEdit()
-        layout.addRow("Name:", self.widgets['name'])
-        
-        # Description
-        self.widgets['description'] = QTextEdit()
-        self.widgets['description'].setMaximumHeight(80)
-        layout.addRow("Description:", self.widgets['description'])
-        
-        # Author
-        self.widgets['author'] = QLineEdit()
-        layout.addRow("Author:", self.widgets['author'])
-        
-        # Version
-        self.widgets['version'] = QLineEdit()
-        layout.addRow("Version:", self.widgets['version'])
-        
-        # Tags
-        self.widgets['tags'] = QLineEdit()
-        self.widgets['tags'].setPlaceholderText("Comma-separated tags")
-        layout.addRow("Tags:", self.widgets['tags'])
-        
-        self.tab_widget.addTab(tab, "General")
-    
-    def create_colors_tab(self):
-        """Create the colors configuration tab."""
-        tab = QScrollArea()
+    def create_general_tab(self) -> QWidget:
+        """Create the general properties tab."""
         widget = QWidget()
         layout = QFormLayout(widget)
         
-        # Common color fields
-        color_fields = [
-            ('primary', 'Primary Color'),
-            ('secondary', 'Secondary Color'),
-            ('accent', 'Accent Color'),
-            ('text', 'Text Color'),
-            ('background', 'Background Color'),
-            ('surface', 'Surface Color'),
-            ('error', 'Error Color'),
-            ('warning', 'Warning Color'),
-            ('success', 'Success Color')
-        ]
+        # Theme name
+        self.name_edit = QLineEdit()
+        layout.addRow("Name:", self.name_edit)
         
-        self.color_buttons = {}
-        for field, label in color_fields:
-            color_layout = QHBoxLayout()
-            
-            color_button = ColorButton()
-            self.color_buttons[field] = color_button
-            color_layout.addWidget(color_button)
-            
-            # Color input field
-            color_input = QLineEdit()
-            color_input.textChanged.connect(lambda text, btn=color_button: btn.set_color(text))
-            color_button.clicked.connect(lambda checked, inp=color_input, btn=color_button: inp.setText(btn.get_color()))
-            self.widgets[f'colors.{field}'] = color_input
-            color_layout.addWidget(color_input)
-            
-            color_widget = QWidget()
-            color_widget.setLayout(color_layout)
-            layout.addRow(label + ":", color_widget)
+        # Version
+        self.version_edit = QLineEdit()
+        layout.addRow("Version:", self.version_edit)
         
-        tab.setWidget(widget)
-        self.tab_widget.addTab(tab, "Colors")
+        # Author
+        self.author_edit = QLineEdit()
+        layout.addRow("Author:", self.author_edit)
+        
+        # Description
+        self.description_edit = QTextEdit()
+        self.description_edit.setMaximumHeight(100)
+        layout.addRow("Description:", self.description_edit)
+        
+        return widget
     
-    def create_hyprland_tab(self):
-        """Create the Hyprland configuration tab."""
-        tab = QScrollArea()
+    def create_hyprland_tab(self) -> QWidget:
+        """Create the Hyprland settings tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        # Window settings group
-        window_group = QGroupBox("Window Settings")
+        # Animations group
+        anim_group = QGroupBox("Animations")
+        anim_layout = QFormLayout(anim_group)
+        
+        self.animations_enabled = QCheckBox()
+        anim_layout.addRow("Enable Animations:", self.animations_enabled)
+        
+        self.animation_duration = QDoubleSpinBox()
+        self.animation_duration.setRange(0.1, 5.0)
+        self.animation_duration.setSingleStep(0.1)
+        anim_layout.addRow("Duration (s):", self.animation_duration)
+        
+        self.animation_curve = QComboBox()
+        self.animation_curve.addItems(["linear", "ease-out", "ease-in", "ease-in-out"])
+        anim_layout.addRow("Curve:", self.animation_curve)
+        
+        layout.addWidget(anim_group)
+        
+        # Window management group
+        window_group = QGroupBox("Window Management")
         window_layout = QFormLayout(window_group)
         
-        # Border colors
-        border_layout = QHBoxLayout()
-        self.widgets['hyprland.border_color_btn'] = ColorButton()
-        self.widgets['hyprland.border_color'] = QLineEdit()
-        border_layout.addWidget(self.widgets['hyprland.border_color_btn'])
-        border_layout.addWidget(self.widgets['hyprland.border_color'])
-        border_widget = QWidget()
-        border_widget.setLayout(border_layout)
-        window_layout.addRow("Border Color:", border_widget)
+        self.window_opacity = QDoubleSpinBox()
+        self.window_opacity.setRange(0.0, 1.0)
+        self.window_opacity.setSingleStep(0.05)
+        window_layout.addRow("Opacity:", self.window_opacity)
+        
+        self.border_size = QSpinBox()
+        self.border_size.setRange(0, 20)
+        window_layout.addRow("Border Size:", self.border_size)
+        
+        # Border color
+        color_layout = QHBoxLayout()
+        self.border_color = QLineEdit()
+        color_layout.addWidget(self.border_color)
+        color_btn = QPushButton("Pick Color")
+        color_btn.clicked.connect(self.pick_border_color)
+        color_layout.addWidget(color_btn)
+        window_layout.addRow("Border Color:", color_layout)
         
         # Gaps
-        self.widgets['hyprland.gaps_in'] = QSpinBox()
-        self.widgets['hyprland.gaps_in'].setRange(0, 50)
-        window_layout.addRow("Inner Gaps:", self.widgets['hyprland.gaps_in'])
+        self.gaps_in = QSpinBox()
+        self.gaps_in.setRange(0, 50)
+        window_layout.addRow("Inner Gaps:", self.gaps_in)
         
-        self.widgets['hyprland.gaps_out'] = QSpinBox()
-        self.widgets['hyprland.gaps_out'].setRange(0, 100)
-        window_layout.addRow("Outer Gaps:", self.widgets['hyprland.gaps_out'])
+        self.gaps_out = QSpinBox()
+        self.gaps_out.setRange(0, 50)
+        window_layout.addRow("Outer Gaps:", self.gaps_out)
         
-        # Border size
-        self.widgets['hyprland.border_size'] = QSpinBox()
-        self.widgets['hyprland.border_size'].setRange(0, 20)
-        window_layout.addRow("Border Size:", self.widgets['hyprland.border_size'])
-        
-        # Rounding
-        self.widgets['hyprland.rounding'] = QSpinBox()
-        self.widgets['hyprland.rounding'].setRange(0, 50)
-        window_layout.addRow("Corner Rounding:", self.widgets['hyprland.rounding'])
+        self.blur_enabled = QCheckBox()
+        window_layout.addRow("Enable Blur:", self.blur_enabled)
         
         layout.addWidget(window_group)
         
-        # Effects group
-        effects_group = QGroupBox("Effects")
-        effects_layout = QFormLayout(effects_group)
-        
-        # Blur
-        self.widgets['hyprland.blur_enabled'] = QCheckBox()
-        effects_layout.addRow("Blur Enabled:", self.widgets['hyprland.blur_enabled'])
-        
-        self.widgets['hyprland.blur_size'] = QSpinBox()
-        self.widgets['hyprland.blur_size'].setRange(1, 20)
-        effects_layout.addRow("Blur Size:", self.widgets['hyprland.blur_size'])
-        
-        # Animations
-        self.widgets['hyprland.animations_enabled'] = QCheckBox()
-        effects_layout.addRow("Animations Enabled:", self.widgets['hyprland.animations_enabled'])
-        
-        self.widgets['hyprland.animation_duration'] = QDoubleSpinBox()
-        self.widgets['hyprland.animation_duration'].setRange(0.1, 5.0)
-        self.widgets['hyprland.animation_duration'].setSingleStep(0.1)
-        effects_layout.addRow("Animation Duration:", self.widgets['hyprland.animation_duration'])
-        
-        layout.addWidget(effects_group)
-        
-        tab.setWidget(widget)
-        self.tab_widget.addTab(tab, "Hyprland")
+        return widget
     
-    def create_waybar_tab(self):
-        """Create the Waybar configuration tab."""
-        tab = QScrollArea()
+    def create_waybar_tab(self) -> QWidget:
+        """Create the Waybar settings tab."""
         widget = QWidget()
         layout = QFormLayout(widget)
         
+        self.waybar_position = QComboBox()
+        self.waybar_position.addItems(["top", "bottom", "left", "right"])
+        layout.addRow("Position:", self.waybar_position)
+        
+        self.waybar_height = QSpinBox()
+        self.waybar_height.setRange(10, 100)
+        layout.addRow("Height:", self.waybar_height)
+        
         # Colors
-        waybar_colors = [
-            ('waybar.background_color', 'Background Color'),
-            ('waybar.text_color', 'Text Color'),
-            ('waybar.border_color', 'Border Color'),
-            ('waybar.urgent_color', 'Urgent Color')
-        ]
+        color_layout = QHBoxLayout()
+        self.waybar_bg_color = QLineEdit()
+        color_layout.addWidget(self.waybar_bg_color)
+        bg_color_btn = QPushButton("Pick")
+        bg_color_btn.clicked.connect(self.pick_waybar_bg_color)
+        color_layout.addWidget(bg_color_btn)
+        layout.addRow("Background Color:", color_layout)
         
-        for field, label in waybar_colors:
-            color_layout = QHBoxLayout()
-            
-            color_button = ColorButton()
-            color_layout.addWidget(color_button)
-            
-            color_input = QLineEdit()
-            color_input.textChanged.connect(lambda text, btn=color_button: btn.set_color(text))
-            self.widgets[field] = color_input
-            color_layout.addWidget(color_input)
-            
-            color_widget = QWidget()
-            color_widget.setLayout(color_layout)
-            layout.addRow(label + ":", color_widget)
+        text_color_layout = QHBoxLayout()
+        self.waybar_text_color = QLineEdit()
+        text_color_layout.addWidget(self.waybar_text_color)
+        text_color_btn = QPushButton("Pick")
+        text_color_btn.clicked.connect(self.pick_waybar_text_color)
+        text_color_layout.addWidget(text_color_btn)
+        layout.addRow("Text Color:", text_color_layout)
         
-        # Dimensions
-        self.widgets['waybar.height'] = QSpinBox()
-        self.widgets['waybar.height'].setRange(20, 100)
-        layout.addRow("Height:", self.widgets['waybar.height'])
+        self.waybar_font_family = QLineEdit()
+        layout.addRow("Font Family:", self.waybar_font_family)
         
-        self.widgets['waybar.border_radius'] = QSpinBox()
-        self.widgets['waybar.border_radius'].setRange(0, 50)
-        layout.addRow("Border Radius:", self.widgets['waybar.border_radius'])
+        self.waybar_font_size = QSpinBox()
+        self.waybar_font_size.setRange(8, 32)
+        layout.addRow("Font Size:", self.waybar_font_size)
         
-        # Font
-        self.widgets['waybar.font_family'] = QLineEdit()
-        layout.addRow("Font Family:", self.widgets['waybar.font_family'])
-        
-        self.widgets['waybar.font_size'] = QSpinBox()
-        self.widgets['waybar.font_size'].setRange(8, 24)
-        layout.addRow("Font Size:", self.widgets['waybar.font_size'])
-        
-        tab.setWidget(widget)
-        self.tab_widget.addTab(tab, "Waybar")
+        return widget
     
-    def create_rofi_tab(self):
-        """Create the Rofi configuration tab."""
-        tab = QScrollArea()
+    def create_rofi_tab(self) -> QWidget:
+        """Create the Rofi settings tab."""
         widget = QWidget()
         layout = QFormLayout(widget)
         
+        self.rofi_theme = QLineEdit()
+        layout.addRow("Theme:", self.rofi_theme)
+        
+        self.rofi_width = QSpinBox()
+        self.rofi_width.setRange(10, 100)
+        layout.addRow("Width (%):", self.rofi_width)
+        
+        self.rofi_location = QComboBox()
+        self.rofi_location.addItems(["center", "top", "bottom", "left", "right"])
+        layout.addRow("Location:", self.rofi_location)
+        
         # Colors
-        rofi_colors = [
-            ('rofi.background', 'Background'),
-            ('rofi.foreground', 'Foreground'),
-            ('rofi.selected_background', 'Selected Background'),
-            ('rofi.selected_foreground', 'Selected Foreground'),
-            ('rofi.border_color', 'Border Color')
-        ]
+        bg_color_layout = QHBoxLayout()
+        self.rofi_bg_color = QLineEdit()
+        bg_color_layout.addWidget(self.rofi_bg_color)
+        bg_color_btn = QPushButton("Pick")
+        bg_color_btn.clicked.connect(self.pick_rofi_bg_color)
+        bg_color_layout.addWidget(bg_color_btn)
+        layout.addRow("Background Color:", bg_color_layout)
         
-        for field, label in rofi_colors:
-            color_layout = QHBoxLayout()
-            
-            color_button = ColorButton()
-            color_layout.addWidget(color_button)
-            
-            color_input = QLineEdit()
-            color_input.textChanged.connect(lambda text, btn=color_button: btn.set_color(text))
-            self.widgets[field] = color_input
-            color_layout.addWidget(color_input)
-            
-            color_widget = QWidget()
-            color_widget.setLayout(color_layout)
-            layout.addRow(label + ":", color_widget)
+        text_color_layout = QHBoxLayout()
+        self.rofi_text_color = QLineEdit()
+        text_color_layout.addWidget(self.rofi_text_color)
+        text_color_btn = QPushButton("Pick")
+        text_color_btn.clicked.connect(self.pick_rofi_text_color)
+        text_color_layout.addWidget(text_color_btn)
+        layout.addRow("Text Color:", text_color_layout)
         
-        # Dimensions
-        self.widgets['rofi.width'] = QSpinBox()
-        self.widgets['rofi.width'].setRange(200, 1200)
-        layout.addRow("Width:", self.widgets['rofi.width'])
+        border_color_layout = QHBoxLayout()
+        self.rofi_border_color = QLineEdit()
+        border_color_layout.addWidget(self.rofi_border_color)
+        border_color_btn = QPushButton("Pick")
+        border_color_btn.clicked.connect(self.pick_rofi_border_color)
+        border_color_layout.addWidget(border_color_btn)
+        layout.addRow("Border Color:", border_color_layout)
         
-        self.widgets['rofi.border_width'] = QSpinBox()
-        self.widgets['rofi.border_width'].setRange(0, 10)
-        layout.addRow("Border Width:", self.widgets['rofi.border_width'])
+        self.rofi_font_family = QLineEdit()
+        layout.addRow("Font Family:", self.rofi_font_family)
         
-        self.widgets['rofi.padding'] = QSpinBox()
-        self.widgets['rofi.padding'].setRange(0, 50)
-        layout.addRow("Padding:", self.widgets['rofi.padding'])
+        self.rofi_font_size = QSpinBox()
+        self.rofi_font_size.setRange(8, 32)
+        layout.addRow("Font Size:", self.rofi_font_size)
         
-        # Font
-        self.widgets['rofi.font'] = QLineEdit()
-        layout.addRow("Font:", self.widgets['rofi.font'])
-        
-        tab.setWidget(widget)
-        self.tab_widget.addTab(tab, "Rofi")
+        return widget
     
     def load_theme_data(self):
-        """Load theme data into widgets."""
-        # General
-        self.widgets['name'].setText(self.theme_data.get('name', ''))
-        self.widgets['description'].setPlainText(self.theme_data.get('description', ''))
-        self.widgets['author'].setText(self.theme_data.get('author', ''))
-        self.widgets['version'].setText(self.theme_data.get('version', '1.0.0'))
+        """Load theme data into the form."""
+        # General properties
+        self.name_edit.setText(self.theme_data.get('name', ''))
+        self.version_edit.setText(self.theme_data.get('version', '1.0.0'))
+        self.author_edit.setText(self.theme_data.get('author', ''))
+        self.description_edit.setPlainText(self.theme_data.get('description', ''))
         
-        # Tags
-        tags = self.theme_data.get('tags', [])
-        if isinstance(tags, list):
-            self.widgets['tags'].setText(', '.join(tags))
+        # Hyprland settings
+        config = self.theme_data.get('config', {})
+        hyprland = config.get('hyprland', {})
         
-        # Colors
-        colors = self.theme_data.get('colors', {})
-        for field in ['primary', 'secondary', 'accent', 'text', 'background', 'surface', 'error', 'warning', 'success']:
-            if field in colors:
-                widget_key = f'colors.{field}'
-                if widget_key in self.widgets:
-                    self.widgets[widget_key].setText(colors[field])
-                    if field in self.color_buttons:
-                        self.color_buttons[field].set_color(colors[field])
+        self.animations_enabled.setChecked(hyprland.get('animations_enabled', True))
+        self.animation_duration.setValue(hyprland.get('animation_duration', 0.5))
+        self.animation_curve.setCurrentText(hyprland.get('animation_curve', 'ease-out'))
+        self.window_opacity.setValue(hyprland.get('window_opacity', 1.0))
+        self.border_size.setValue(hyprland.get('border_size', 1))
+        self.border_color.setText(hyprland.get('border_color', '#ffffff'))
+        self.gaps_in.setValue(hyprland.get('gaps_in', 5))
+        self.gaps_out.setValue(hyprland.get('gaps_out', 10))
+        self.blur_enabled.setChecked(hyprland.get('blur_enabled', True))
         
-        # Hyprland
-        hyprland = self.theme_data.get('hyprland', {})
-        hyprland_fields = {
-            'border_color': str,
-            'gaps_in': int,
-            'gaps_out': int,
-            'border_size': int,
-            'rounding': int,
-            'blur_enabled': bool,
-            'blur_size': int,
-            'animations_enabled': bool,
-            'animation_duration': float
-        }
+        # Waybar settings
+        waybar = config.get('waybar', {})
         
-        for field, field_type in hyprland_fields.items():
-            widget_key = f'hyprland.{field}'
-            if field in hyprland and widget_key in self.widgets:
-                widget = self.widgets[widget_key]
-                value = hyprland[field]
-                
-                if isinstance(widget, QLineEdit):
-                    widget.setText(str(value))
-                elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
-                    widget.setValue(value)
-                elif isinstance(widget, QCheckBox):
-                    widget.setChecked(bool(value))
+        self.waybar_position.setCurrentText(waybar.get('position', 'top'))
+        self.waybar_height.setValue(waybar.get('height', 30))
+        self.waybar_bg_color.setText(waybar.get('background_color', 'rgba(43, 48, 59, 0.5)'))
+        self.waybar_text_color.setText(waybar.get('text_color', '#ffffff'))
+        self.waybar_font_family.setText(waybar.get('font_family', 'JetBrainsMono Nerd Font'))
+        self.waybar_font_size.setValue(waybar.get('font_size', 13))
         
-        # Waybar
-        waybar = self.theme_data.get('waybar', {})
-        waybar_fields = ['background_color', 'text_color', 'border_color', 'urgent_color', 'font_family']
-        waybar_numeric = {'height': int, 'border_radius': int, 'font_size': int}
+        # Rofi settings
+        rofi = config.get('rofi', {})
         
-        for field in waybar_fields:
-            widget_key = f'waybar.{field}'
-            if field in waybar and widget_key in self.widgets:
-                self.widgets[widget_key].setText(str(waybar[field]))
-        
-        for field, field_type in waybar_numeric.items():
-            widget_key = f'waybar.{field}'
-            if field in waybar and widget_key in self.widgets:
-                self.widgets[widget_key].setValue(waybar[field])
-        
-        # Rofi
-        rofi = self.theme_data.get('rofi', {})
-        rofi_fields = ['background', 'foreground', 'selected_background', 'selected_foreground', 'border_color', 'font']
-        rofi_numeric = {'width': int, 'border_width': int, 'padding': int}
-        
-        for field in rofi_fields:
-            widget_key = f'rofi.{field}'
-            if field in rofi and widget_key in self.widgets:
-                self.widgets[widget_key].setText(str(rofi[field]))
-        
-        for field, field_type in rofi_numeric.items():
-            widget_key = f'rofi.{field}'
-            if field in rofi and widget_key in self.widgets:
-                self.widgets[widget_key].setValue(rofi[field])
+        self.rofi_theme.setText(rofi.get('theme', 'default'))
+        self.rofi_width.setValue(rofi.get('width', 40))
+        self.rofi_location.setCurrentText(rofi.get('location', 'center'))
+        self.rofi_bg_color.setText(rofi.get('background_color', '#2e3440'))
+        self.rofi_text_color.setText(rofi.get('text_color', '#eceff4'))
+        self.rofi_border_color.setText(rofi.get('border_color', '#5e81ac'))
+        self.rofi_font_family.setText(rofi.get('font_family', 'JetBrainsMono Nerd Font'))
+        self.rofi_font_size.setValue(rofi.get('font_size', 14))
     
     def get_theme_data(self) -> Dict[str, Any]:
-        """Get theme data from widgets."""
-        data = {}
-        
-        # General
-        data['name'] = self.widgets['name'].text()
-        data['description'] = self.widgets['description'].toPlainText()
-        data['author'] = self.widgets['author'].text()
-        data['version'] = self.widgets['version'].text()
-        
-        # Tags
-        tags_text = self.widgets['tags'].text()
-        if tags_text.strip():
-            data['tags'] = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
-        
-        # Colors
-        colors = {}
-        for field in ['primary', 'secondary', 'accent', 'text', 'background', 'surface', 'error', 'warning', 'success']:
-            widget_key = f'colors.{field}'
-            if widget_key in self.widgets:
-                value = self.widgets[widget_key].text()
-                if value:
-                    colors[field] = value
-        if colors:
-            data['colors'] = colors
-        
-        # Hyprland
-        hyprland = {}
-        hyprland_fields = {
-            'border_color': (str, QLineEdit),
-            'gaps_in': (int, QSpinBox),
-            'gaps_out': (int, QSpinBox),
-            'border_size': (int, QSpinBox),
-            'rounding': (int, QSpinBox),
-            'blur_enabled': (bool, QCheckBox),
-            'blur_size': (int, QSpinBox),
-            'animations_enabled': (bool, QCheckBox),
-            'animation_duration': (float, QDoubleSpinBox)
+        """Get the edited theme data."""
+        return {
+            'name': self.name_edit.text(),
+            'version': self.version_edit.text(),
+            'author': self.author_edit.text(),
+            'description': self.description_edit.toPlainText(),
+            'config': {
+                'hyprland': {
+                    'animations_enabled': self.animations_enabled.isChecked(),
+                    'animation_duration': self.animation_duration.value(),
+                    'animation_curve': self.animation_curve.currentText(),
+                    'window_opacity': self.window_opacity.value(),
+                    'border_size': self.border_size.value(),
+                    'border_color': self.border_color.text(),
+                    'gaps_in': self.gaps_in.value(),
+                    'gaps_out': self.gaps_out.value(),
+                    'blur_enabled': self.blur_enabled.isChecked()
+                },
+                'waybar': {
+                    'position': self.waybar_position.currentText(),
+                    'height': self.waybar_height.value(),
+                    'background_color': self.waybar_bg_color.text(),
+                    'text_color': self.waybar_text_color.text(),
+                    'font_family': self.waybar_font_family.text(),
+                    'font_size': self.waybar_font_size.value()
+                },
+                'rofi': {
+                    'theme': self.rofi_theme.text(),
+                    'width': self.rofi_width.value(),
+                    'location': self.rofi_location.currentText(),
+                    'background_color': self.rofi_bg_color.text(),
+                    'text_color': self.rofi_text_color.text(),
+                    'border_color': self.rofi_border_color.text(),
+                    'font_family': self.rofi_font_family.text(),
+                    'font_size': self.rofi_font_size.value()
+                }
+            }
         }
-        
-        for field, (field_type, widget_type) in hyprland_fields.items():
-            widget_key = f'hyprland.{field}'
-            if widget_key in self.widgets:
-                widget = self.widgets[widget_key]
-                
-                if isinstance(widget, QLineEdit):
-                    value = widget.text()
-                    if value:
-                        hyprland[field] = value
-                elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
-                    hyprland[field] = widget.value()
-                elif isinstance(widget, QCheckBox):
-                    hyprland[field] = widget.isChecked()
-        
-        if hyprland:
-            data['hyprland'] = hyprland
-        
-        # Similar processing for waybar and rofi...
-        # (Simplified for brevity - full implementation would include all fields)
-        
-        return data
     
-    def preview_theme(self):
-        """Preview the current theme."""
-        try:
-            theme_data = self.get_theme_data()
-            # Create a simple preview dialog
-            preview_text = yaml.dump(theme_data, default_flow_style=False, indent=2)
-            
-            preview_dialog = QDialog(self)
-            preview_dialog.setWindowTitle("Theme Preview")
-            preview_dialog.resize(500, 400)
-            
-            layout = QVBoxLayout(preview_dialog)
-            
-            preview_edit = QTextEdit()
-            preview_edit.setPlainText(preview_text)
-            preview_edit.setReadOnly(True)
-            layout.addWidget(preview_edit)
-            
-            close_button = QPushButton("Close")
-            close_button.clicked.connect(preview_dialog.accept)
-            layout.addWidget(close_button)
-            
-            preview_dialog.exec_()
-            
-        except Exception as e:
-            QMessageBox.warning(self, "Preview Error", f"Failed to generate preview: {str(e)}")
+    def pick_border_color(self):
+        """Pick border color."""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.border_color.setText(color.name())
+    
+    def pick_waybar_bg_color(self):
+        """Pick waybar background color."""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.waybar_bg_color.setText(color.name())
+    
+    def pick_waybar_text_color(self):
+        """Pick waybar text color."""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.waybar_text_color.setText(color.name())
+    
+    def pick_rofi_bg_color(self):
+        """Pick rofi background color."""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.rofi_bg_color.setText(color.name())
+    
+    def pick_rofi_text_color(self):
+        """Pick rofi text color."""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.rofi_text_color.setText(color.name())
+    
+    def pick_rofi_border_color(self):
+        """Pick rofi border color."""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.rofi_border_color.setText(color.name())
+    
+    def accept(self):
+        """Accept the dialog and validate data."""
+        # Validate required fields
+        if not self.name_edit.text().strip():
+            QMessageBox.warning(self, "Validation Error", "Theme name is required.")
+            return
+        
+        if not self.version_edit.text().strip():
+            QMessageBox.warning(self, "Validation Error", "Version is required.")
+            return
+        
+        super().accept()
