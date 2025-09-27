@@ -5,14 +5,14 @@ Theme editor dialog for HyprRice
 import json
 import yaml
 from typing import Dict, Any
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
     QFormLayout, QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox,
     QCheckBox, QPushButton, QLabel, QColorDialog, QMessageBox,
     QScrollArea, QGroupBox, QComboBox, QListWidget, QListWidgetItem
 )
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QPalette
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QPalette
 
 
 class ColorButton(QPushButton):

@@ -4,15 +4,15 @@ Backup and history management tab for HyprRice GUI
 
 import os
 from pathlib import Path
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QPushButton, 
     QListWidget, QListWidgetItem, QLabel, QLineEdit, QTextEdit,
     QMessageBox, QFileDialog, QGroupBox, QSplitter, QTabWidget,
     QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox,
     QSpinBox, QComboBox, QProgressBar, QFrame, QInputDialog
 )
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
-from PyQt5.QtGui import QFont, QIcon
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QFont, QIcon
 from ..backup_manager import BackupManager
 
 

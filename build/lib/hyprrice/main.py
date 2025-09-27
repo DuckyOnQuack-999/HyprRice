@@ -10,11 +10,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
-
 from .config import Config
-from .main_gui import HyprRiceGUI
 from .utils import setup_logging, check_dependencies, create_directories
 from .exceptions import HyprRiceError
 
@@ -131,7 +127,10 @@ def main() -> int:
         if args.no_backup:
             config.general.auto_backup = False
         
-        # Create Qt application
+        # Create Qt application and GUI window
+        from PyQt6.QtWidgets import QApplication
+        from .main_gui import HyprRiceGUI
+        
         app = QApplication(sys.argv)
         app.setApplicationName("HyprRice")
         app.setApplicationVersion("1.0.0")
@@ -148,7 +147,7 @@ def main() -> int:
         logger.info("HyprRice GUI started successfully")
         
         # Run application
-        return app.exec_()
+        return app.exec()
         
     except KeyboardInterrupt:
         logger.info("Application interrupted by user")

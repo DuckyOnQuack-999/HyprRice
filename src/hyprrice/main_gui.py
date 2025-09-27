@@ -404,7 +404,7 @@ class HyprRiceGUI(QMainWindow):
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Help)
         
         # Connect help button
-        if msg_box.clickedButton(msg_box.button(QMessageBox.StandardButton.Help)):
+        if msg_box.clickedButton() == msg_box.button(QMessageBox.StandardButton.Help):
             self.show_help()
         
         msg_box.exec()

@@ -94,6 +94,9 @@ class HyprlandTab(BaseTab):
         # List of sourced files
         self.sourced_files_list = QListWidget()
         self.sourced_files_list.setMaximumHeight(120)
+        from PyQt6.QtCore import Qt
+        self.sourced_files_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.sourced_files_list.customContextMenuRequested.connect(self._show_sourced_file_context_menu)
         self._populate_sourced_files()
         sourced_layout.addWidget(self.sourced_files_list)
         
@@ -228,18 +231,246 @@ class HyprlandTab(BaseTab):
             self.sourced_files_list.addItem(item)
 
     def _add_sourced_file(self):
-        """Add a new sourced file."""
-        file_path, ok = QInputDialog.getText(
-            self, "Add Sourced File", "Enter the path to the configuration file:",
-            text="~/.config/hypr/custom.conf"
+        """Add a new sourced file with enhanced options."""
+        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QTextEdit, QGroupBox, QFormLayout, QCheckBox
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Add Sourced Configuration File")
+        dialog.setModal(True)
+        dialog.resize(500, 400)
+        
+        layout = QVBoxLayout(dialog)
+        
+        # File path selection
+        path_group = QGroupBox("File Path")
+        path_layout = QFormLayout(path_group)
+        
+        self.file_path_edit = QLineEdit("~/.config/hypr/custom.conf")
+        path_layout.addRow("Path:", self.file_path_edit)
+        
+        browse_button = QPushButton("Browse...")
+        browse_button.clicked.connect(lambda: self._browse_config_file())
+        path_layout.addRow("", browse_button)
+        
+        layout.addWidget(path_group)
+        
+        # Configuration type
+        type_group = QGroupBox("Configuration Type")
+        type_layout = QFormLayout(type_group)
+        
+        self.config_type_combo = QComboBox()
+        self.config_type_combo.addItems([
+            "General Settings",
+            "Window Rules", 
+            "Keybindings",
+            "Workspace Rules",
+            "Monitor Settings",
+            "Input Settings",
+            "Decoration Settings",
+            "Animation Settings",
+            "Plugin Settings",
+            "Custom"
+        ])
+        type_layout.addRow("Type:", self.config_type_combo)
+        
+        layout.addWidget(type_group)
+        
+        # Auto-create file option
+        create_group = QGroupBox("File Options")
+        create_layout = QFormLayout(create_group)
+        
+        self.auto_create_checkbox = QCheckBox("Create file if it doesn't exist")
+        self.auto_create_checkbox.setChecked(True)
+        create_layout.addRow(self.auto_create_checkbox)
+        
+        self.include_template_checkbox = QCheckBox("Include template content")
+        self.include_template_checkbox.setChecked(True)
+        create_layout.addRow(self.include_template_checkbox)
+        
+        layout.addWidget(create_group)
+        
+        # Template preview
+        template_group = QGroupBox("Template Preview")
+        template_layout = QVBoxLayout(template_group)
+        
+        self.template_preview = QTextEdit()
+        self.template_preview.setMaximumHeight(100)
+        self.template_preview.setReadOnly(True)
+        self.template_preview.setPlainText(self._get_template_content("General Settings"))
+        template_layout.addWidget(self.template_preview)
+        
+        # Update template when type changes
+        self.config_type_combo.currentTextChanged.connect(
+            lambda text: self.template_preview.setPlainText(self._get_template_content(text))
         )
-        if ok and file_path:
-            # Expand tilde if present
-            expanded_path = os.path.expanduser(file_path)
-            if expanded_path not in self.config.hyprland.sourced_files:
-                self.config.hyprland.sourced_files.append(expanded_path)
-                self._populate_sourced_files()
-                self._on_change()
+        
+        layout.addWidget(template_group)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(dialog.reject)
+        button_layout.addWidget(cancel_button)
+        
+        add_button = QPushButton("Add File")
+        add_button.clicked.connect(dialog.accept)
+        add_button.setDefault(True)
+        button_layout.addWidget(add_button)
+        
+        layout.addLayout(button_layout)
+        
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            file_path = self.file_path_edit.text().strip()
+            if file_path:
+                # Expand tilde if present
+                expanded_path = os.path.expanduser(file_path)
+                
+                # Create file if requested
+                if self.auto_create_checkbox.isChecked():
+                    self._create_config_file(expanded_path, self.config_type_combo.currentText(), 
+                                           self.include_template_checkbox.isChecked())
+                
+                # Add to sourced files
+                if expanded_path not in self.config.hyprland.sourced_files:
+                    self.config.hyprland.sourced_files.append(expanded_path)
+                    self._populate_sourced_files()
+                    self._on_change()
+    
+    def _browse_config_file(self):
+        """Browse for a configuration file."""
+        from PyQt6.QtWidgets import QFileDialog
+        
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Configuration File", 
+            os.path.expanduser("~/.config/hypr/"),
+            "Configuration Files (*.conf);;All Files (*)"
+        )
+        if file_path:
+            self.file_path_edit.setText(file_path)
+    
+    def _get_template_content(self, config_type):
+        """Get template content for the specified configuration type."""
+        templates = {
+            "General Settings": """# General Hyprland settings
+general {
+    gaps_in = 5
+    gaps_out = 10
+    border_size = 2
+    col.active_border = rgba(5e81acff)
+    col.inactive_border = rgba(2e3440ff)
+    layout = dwindle
+}""",
+            "Window Rules": """# Window rules
+windowrule = float, ^(pavucontrol)$
+windowrule = float, ^(blueman-manager)$
+windowrule = float, ^(nm-connection-editor)$
+windowrule = float, ^(chromium)$
+windowrule = float, ^(thunar)$
+windowrule = float, ^(org.kde.polkit-kde-authentication-agent-1)$""",
+            "Keybindings": """# Keybindings
+bind = SUPER, Q, exec, kitty
+bind = SUPER, C, killactive,
+bind = SUPER, M, exit,
+bind = SUPER, E, exec, thunar
+bind = SUPER, V, togglefloating,
+bind = SUPER, R, exec, rofi -show drun
+bind = SUPER, P, pseudo, # dwindle
+bind = SUPER, J, togglesplit, # dwindle""",
+            "Workspace Rules": """# Workspace rules
+workspace = 1, monitor:DP-1
+workspace = 2, monitor:DP-1
+workspace = 3, monitor:DP-1
+workspace = 4, monitor:DP-1
+workspace = 5, monitor:DP-1
+workspace = 6, monitor:DP-2
+workspace = 7, monitor:DP-2
+workspace = 8, monitor:DP-2
+workspace = 9, monitor:DP-2
+workspace = 10, monitor:DP-2""",
+            "Monitor Settings": """# Monitor settings
+monitor = DP-1, 2560x1440@144, 0x0, 1
+monitor = DP-2, 2560x1440@144, 2560x0, 1
+monitor = HDMI-A-1, disable""",
+            "Input Settings": """# Input settings
+input {
+    kb_layout = us
+    kb_variant =
+    kb_model =
+    kb_options =
+    kb_rules =
+    follow_mouse = 1
+    touchpad {
+        natural_scroll = no
+    }
+    sensitivity = 0 # -1.0 - 1.0, 0 means no modification.
+}""",
+            "Decoration Settings": """# Decoration settings
+decoration {
+    rounding = 8
+    blur {
+        enabled = true
+        size = 8
+        passes = 1
+    }
+    drop_shadow = yes
+    shadow_range = 4
+    shadow_render_power = 3
+    col.shadow = rgba(1a1a1aee)
+}""",
+            "Animation Settings": """# Animation settings
+animations {
+    enabled = yes
+    bezier = myBezier, 0.05, 0.9, 0.1, 1.05
+    animation = windows, 1, 7, myBezier
+    animation = windowsOut, 1, 7, default, popin 80%
+    animation = border, 1, 10, default
+    animation = borderangle, 1, 8, default
+    animation = fade, 1, 7, default
+    animation = workspaces, 1, 6, default
+}""",
+            "Plugin Settings": """# Plugin settings
+plugin {
+    hyprbars {
+        bar_color = rgb(2e3440)
+        bar_height = 28
+        col_text = rgb(10, 10, 10)
+        bar_text_size = 11
+        bar_text_font = Ubuntu, Bold
+        bar_button_padding = 10
+        bar_padding = 10
+        bar_precedence_over_border = true
+        hyprbars-button = rgb(10, 10, 10), 16, 󰖭, hyprctl dispatch killactive
+        hyprbars-button = rgb(10, 10, 10), 16, 󰖯, hyprctl dispatch fullscreen 1
+        hyprbars-button = rgb(10, 10, 10), 16, 󰖰, hyprctl dispatch movetoworkspace +1
+    }
+}""",
+            "Custom": """# Custom configuration
+# Add your custom settings here
+"""
+        }
+        return templates.get(config_type, "# Custom configuration\n# Add your settings here")
+    
+    def _create_config_file(self, file_path, config_type, include_template):
+        """Create a configuration file with template content."""
+        try:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            # Write template content if requested
+            if include_template:
+                template_content = self._get_template_content(config_type)
+                with open(file_path, 'w') as f:
+                    f.write(template_content)
+            else:
+                # Create empty file
+                with open(file_path, 'w') as f:
+                    f.write(f"# {config_type} configuration file\n")
+            
+            QMessageBox.information(self, "File Created", f"Configuration file created: {file_path}")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to create file: {e}")
 
     def _remove_sourced_file(self):
         """Remove the selected sourced file."""
@@ -247,9 +478,85 @@ class HyprlandTab(BaseTab):
         if current_item:
             file_path = current_item.text()
             if file_path in self.config.hyprland.sourced_files:
-                self.config.hyprland.sourced_files.remove(file_path)
-                self._populate_sourced_files()
-                self._on_change()
+                # Ask for confirmation
+                reply = QMessageBox.question(
+                    self, "Remove File", 
+                    f"Remove '{file_path}' from sourced files?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.config.hyprland.sourced_files.remove(file_path)
+                    self._populate_sourced_files()
+                    self._on_change()
+    
+    def _edit_sourced_file(self):
+        """Edit the selected sourced file."""
+        current_item = self.sourced_files_list.currentItem()
+        if current_item:
+            file_path = current_item.text()
+            self._open_file_editor(file_path)
+    
+    def _open_file_editor(self, file_path):
+        """Open a file in the external editor."""
+        try:
+            import subprocess
+            import shutil
+            
+            # Try to find a suitable editor
+            editors = ['code', 'gedit', 'kate', 'mousepad', 'nano', 'vim']
+            editor = None
+            
+            for ed in editors:
+                if shutil.which(ed):
+                    editor = ed
+                    break
+            
+            if editor:
+                subprocess.Popen([editor, file_path])
+            else:
+                QMessageBox.information(
+                    self, "No Editor Found", 
+                    "No suitable text editor found. Please install one of: " + ", ".join(editors)
+                )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open editor: {e}")
+    
+    def _show_sourced_file_context_menu(self, position):
+        """Show context menu for sourced files list."""
+        item = self.sourced_files_list.itemAt(position)
+        if item:
+            from PyQt6.QtWidgets import QMenu
+            
+            menu = QMenu(self)
+            
+            edit_action = menu.addAction("Edit File")
+            edit_action.triggered.connect(self._edit_sourced_file)
+            
+            menu.addSeparator()
+            
+            remove_action = menu.addAction("Remove from List")
+            remove_action.triggered.connect(self._remove_sourced_file)
+            
+            menu.addSeparator()
+            
+            open_folder_action = menu.addAction("Open Containing Folder")
+            open_folder_action.triggered.connect(self._open_containing_folder)
+            
+            menu.exec(self.sourced_files_list.mapToGlobal(position))
+    
+    def _open_containing_folder(self):
+        """Open the containing folder of the selected file."""
+        current_item = self.sourced_files_list.currentItem()
+        if current_item:
+            file_path = current_item.text()
+            try:
+                import subprocess
+                import os
+                
+                folder_path = os.path.dirname(file_path)
+                subprocess.Popen(['xdg-open', folder_path])
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to open folder: {e}")
 
     def _create_sourced_file(self):
         """Create a new sourced file with default content."""
@@ -771,7 +1078,7 @@ class ThemesTab(BaseTab):
     def _import_theme(self):
         """Import a theme from file."""
         try:
-            from PyQt5.QtWidgets import QFileDialog
+            from PyQt6.QtWidgets import QFileDialog
             
             file_path, _ = QFileDialog.getOpenFileName(
                 self, 
@@ -793,7 +1100,7 @@ class ThemesTab(BaseTab):
     def _export_theme(self):
         """Export current configuration as theme."""
         try:
-            from PyQt5.QtWidgets import QFileDialog
+            from PyQt6.QtWidgets import QFileDialog
             
             file_path, _ = QFileDialog.getSaveFileName(
                 self,

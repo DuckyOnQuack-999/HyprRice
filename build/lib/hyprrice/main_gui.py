@@ -124,8 +124,9 @@ class HyprRiceGUI(QMainWindow):
         # Load default plugins after UI setup
         self.load_default_plugins()
         
-        # Apply modern theme
-        self.modern_theme.set_theme(self.config.gui.theme)
+        # Apply modern theme with ultra-modern styling
+        self.modern_theme.set_accent_color("#6366f1")  # Modern indigo accent
+        self.modern_theme.set_theme("dark")  # Force dark theme for sleek look
         self.modern_theme.apply_to_application(QApplication.instance())
         
         # Start performance monitoring (if enabled)
@@ -285,17 +286,17 @@ class HyprRiceGUI(QMainWindow):
         """Setup keyboard shortcuts for better accessibility."""
         shortcuts = [
             # File operations
-            (QKeySequence.New, self.new_theme),
-            (QKeySequence.Open, self.open_theme),
-            (QKeySequence.Save, self.save_theme),
+            (QKeySequence.StandardKey.New, self.new_theme),
+            (QKeySequence.StandardKey.Open, self.open_theme),
+            (QKeySequence.StandardKey.Save, self.save_theme),
             (QKeySequence("Ctrl+E"), self.export_config),
             (QKeySequence("Ctrl+I"), self.import_config),
-            (QKeySequence.Quit, self.close),
+            (QKeySequence.StandardKey.Quit, self.close),
             
             # Edit operations
-            (QKeySequence.Undo, self.undo),
-            (QKeySequence.Redo, self.redo),
-            (QKeySequence.Preferences, self.show_preferences),
+            (QKeySequence.StandardKey.Undo, self.undo),
+            (QKeySequence.StandardKey.Redo, self.redo),
+            (QKeySequence.StandardKey.Preferences, self.show_preferences),
             
             # View operations
             (QKeySequence("F5"), self.refresh_all_tabs),
@@ -326,10 +327,11 @@ class HyprRiceGUI(QMainWindow):
                 # Add tooltip showing the shortcut
                 if hasattr(action, '__self__') and hasattr(action.__self__, 'setToolTip'):
                     current_tooltip = action.__self__.toolTip()
+                    shortcut_text = str(shortcut_key)
                     if current_tooltip:
-                        action.__self__.setToolTip(f"{current_tooltip} ({shortcut_key.toString()})")
+                        action.__self__.setToolTip(f"{current_tooltip} ({shortcut_text})")
                     else:
-                        action.__self__.setToolTip(f"Shortcut: {shortcut_key.toString()}")
+                        action.__self__.setToolTip(f"Shortcut: {shortcut_text}")
                         
             except Exception as e:
                 self.logger.warning(f"Failed to setup shortcut {shortcut_key}: {e}")

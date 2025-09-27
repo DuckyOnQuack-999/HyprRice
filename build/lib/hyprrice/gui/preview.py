@@ -92,7 +92,7 @@ class PreviewWindow(QWidget):
         header_layout = QHBoxLayout()
         
         title_label = QLabel("Live Configuration Preview")
-        title_label.setFont(QFont("Arial", 12, QFont.Bold))
+        title_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         header_layout.addWidget(title_label)
         
         header_layout.addStretch()
@@ -166,30 +166,88 @@ class PreviewWindow(QWidget):
         self.content_layout.addWidget(theme_group)
     
     def create_hyprland_preview(self):
-        """Create Hyprland settings preview."""
-        hyprland_group = QGroupBox("Hyprland Configuration")
-        hyprland_layout = QGridLayout(hyprland_group)
+        """Create Hyprland settings preview with live configuration."""
+        hyprland_group = QGroupBox("Hyprland Configuration Preview")
+        hyprland_layout = QVBoxLayout(hyprland_group)
+        
+        # Current vs Preview comparison
+        comparison_layout = QHBoxLayout()
+        
+        # Current configuration
+        current_group = QGroupBox("Current (Live)")
+        current_layout = QGridLayout(current_group)
+        
+        # Preview configuration
+        preview_group = QGroupBox("Preview (Pending)")
+        preview_layout = QGridLayout(preview_group)
         
         # Window settings
-        hyprland_layout.addWidget(QLabel("Border Color:"), 0, 0)
-        self.border_color_preview = ColorPreview(label="Border")
-        hyprland_layout.addWidget(self.border_color_preview, 0, 1)
+        current_layout.addWidget(QLabel("Border Color:"), 0, 0)
+        self.current_border_color = ColorPreview(label="Current Border")
+        current_layout.addWidget(self.current_border_color, 0, 1)
         
-        self.gaps_label = QLabel("Gaps: Loading...")
-        hyprland_layout.addWidget(self.gaps_label, 0, 2)
+        preview_layout.addWidget(QLabel("Border Color:"), 0, 0)
+        self.preview_border_color = ColorPreview(label="Preview Border")
+        preview_layout.addWidget(self.preview_border_color, 0, 1)
         
-        self.border_size_label = QLabel("Border Size: Loading...")
-        hyprland_layout.addWidget(self.border_size_label, 0, 3)
+        # Gaps
+        self.current_gaps_label = QLabel("Gaps: Loading...")
+        current_layout.addWidget(self.current_gaps_label, 1, 0, 1, 2)
         
-        # Effects settings
-        self.blur_label = QLabel("Blur: Loading...")
-        hyprland_layout.addWidget(self.blur_label, 1, 0)
+        self.preview_gaps_label = QLabel("Gaps: Loading...")
+        preview_layout.addWidget(self.preview_gaps_label, 1, 0, 1, 2)
         
-        self.animations_label = QLabel("Animations: Loading...")
-        hyprland_layout.addWidget(self.animations_label, 1, 1)
+        # Border size
+        self.current_border_size_label = QLabel("Border Size: Loading...")
+        current_layout.addWidget(self.current_border_size_label, 2, 0, 1, 2)
         
-        self.rounding_label = QLabel("Rounding: Loading...")
-        hyprland_layout.addWidget(self.rounding_label, 1, 2)
+        self.preview_border_size_label = QLabel("Border Size: Loading...")
+        preview_layout.addWidget(self.preview_border_size_label, 2, 0, 1, 2)
+        
+        # Effects
+        self.current_blur_label = QLabel("Blur: Loading...")
+        current_layout.addWidget(self.current_blur_label, 3, 0, 1, 2)
+        
+        self.preview_blur_label = QLabel("Blur: Loading...")
+        preview_layout.addWidget(self.preview_blur_label, 3, 0, 1, 2)
+        
+        # Animations
+        self.current_animations_label = QLabel("Animations: Loading...")
+        current_layout.addWidget(self.current_animations_label, 4, 0, 1, 2)
+        
+        self.preview_animations_label = QLabel("Animations: Loading...")
+        preview_layout.addWidget(self.preview_animations_label, 4, 0, 1, 2)
+        
+        # Rounding
+        self.current_rounding_label = QLabel("Rounding: Loading...")
+        current_layout.addWidget(self.current_rounding_label, 5, 0, 1, 2)
+        
+        self.preview_rounding_label = QLabel("Rounding: Loading...")
+        preview_layout.addWidget(self.preview_rounding_label, 5, 0, 1, 2)
+        
+        comparison_layout.addWidget(current_group)
+        comparison_layout.addWidget(preview_group)
+        hyprland_layout.addLayout(comparison_layout)
+        
+        # Configuration diff
+        diff_group = QGroupBox("Configuration Changes")
+        diff_layout = QVBoxLayout(diff_group)
+        
+        self.config_diff_text = QTextEdit()
+        self.config_diff_text.setMaximumHeight(150)
+        self.config_diff_text.setReadOnly(True)
+        self.config_diff_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                border: 1px solid #333;
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 10px;
+            }
+        """)
+        diff_layout.addWidget(self.config_diff_text)
+        
+        hyprland_layout.addWidget(diff_group)
         
         self.content_layout.addWidget(hyprland_group)
     
@@ -279,40 +337,188 @@ class PreviewWindow(QWidget):
             self.theme_info_label.setText(f"Theme: Error loading ({str(e)})")
     
     def update_hyprland_info(self):
-        """Update Hyprland configuration info."""
+        """Update Hyprland configuration info with live vs preview comparison."""
         try:
-            # Get current Hyprland config
-            window_config = self.window_manager.get_window_config()
+            from ..utils import hyprctl
             
-            # Update border color
-            border_color = window_config.get('general_col_active_border', '#5e81ac')
-            if isinstance(border_color, str):
-                self.border_color_preview.set_color(border_color)
+            # Get current live Hyprland config
+            current_config = self.get_current_hyprland_config()
             
-            # Update gaps
-            gaps_in = window_config.get('general_gaps_in', 5)
-            gaps_out = window_config.get('general_gaps_out', 10)
-            self.gaps_label.setText(f"Gaps: {gaps_in}/{gaps_out}")
+            # Get preview config from HyprRice
+            preview_config = self.get_preview_hyprland_config()
             
-            # Update border size
-            border_size = window_config.get('general_border_size', 2)
-            self.border_size_label.setText(f"Border: {border_size}px")
+            # Update current (live) configuration
+            self.current_border_color.set_color(current_config.get('border_color', '#5e81ac'))
+            self.current_gaps_label.setText(f"Gaps: {current_config.get('gaps_in', 5)}/{current_config.get('gaps_out', 10)}")
+            self.current_border_size_label.setText(f"Border: {current_config.get('border_size', 2)}px")
+            self.current_blur_label.setText(f"Blur: {'On' if current_config.get('blur_enabled', True) else 'Off'} ({current_config.get('blur_size', 8)})")
+            self.current_animations_label.setText(f"Animations: {'On' if current_config.get('animations_enabled', True) else 'Off'}")
+            self.current_rounding_label.setText(f"Rounding: {current_config.get('rounding', 8)}px")
             
-            # Update blur
-            blur_enabled = window_config.get('decoration_blur_enabled', True)
-            blur_size = window_config.get('decoration_blur_size', 8)
-            self.blur_label.setText(f"Blur: {'On' if blur_enabled else 'Off'} ({blur_size})")
+            # Update preview configuration
+            self.preview_border_color.set_color(preview_config.get('border_color', '#5e81ac'))
+            self.preview_gaps_label.setText(f"Gaps: {preview_config.get('gaps_in', 5)}/{preview_config.get('gaps_out', 10)}")
+            self.preview_border_size_label.setText(f"Border: {preview_config.get('border_size', 2)}px")
+            self.preview_blur_label.setText(f"Blur: {'On' if preview_config.get('blur_enabled', True) else 'Off'} ({preview_config.get('blur_size', 8)})")
+            self.preview_animations_label.setText(f"Animations: {'On' if preview_config.get('animations_enabled', True) else 'Off'}")
+            self.preview_rounding_label.setText(f"Rounding: {preview_config.get('rounding', 8)}px")
             
-            # Update animations
-            animations = window_config.get('animations_enabled', True)
-            self.animations_label.setText(f"Animations: {'On' if animations else 'Off'}")
-            
-            # Update rounding
-            rounding = window_config.get('decoration_rounding', 8)
-            self.rounding_label.setText(f"Rounding: {rounding}px")
+            # Generate configuration diff
+            self.update_config_diff(current_config, preview_config)
             
         except Exception as e:
-            self.gaps_label.setText(f"Hyprland: Error ({str(e)})")
+            self.current_gaps_label.setText(f"Hyprland: Error ({str(e)})")
+            self.preview_gaps_label.setText(f"Preview: Error ({str(e)})")
+    
+    def get_current_hyprland_config(self):
+        """Get current live Hyprland configuration."""
+        try:
+            from ..utils import hyprctl
+            
+            # Get current Hyprland settings
+            returncode, stdout, stderr = hyprctl("getoption general:gaps_in", json=True)
+            gaps_in = 5
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    gaps_in = data.get('int', 5)
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption general:gaps_out", json=True)
+            gaps_out = 10
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    gaps_out = data.get('int', 10)
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption general:col.active_border", json=True)
+            border_color = "#5e81ac"
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    border_color = data.get('str', "#5e81ac")
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption general:border_size", json=True)
+            border_size = 2
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    border_size = data.get('int', 2)
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption decoration:blur:enabled", json=True)
+            blur_enabled = True
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    blur_enabled = data.get('int', 1) == 1
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption decoration:blur:size", json=True)
+            blur_size = 8
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    blur_size = data.get('int', 8)
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption decoration:rounding", json=True)
+            rounding = 8
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    rounding = data.get('int', 8)
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption animations:enabled", json=True)
+            animations_enabled = True
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    animations_enabled = data.get('int', 1) == 1
+                except:
+                    pass
+            
+            return {
+                'gaps_in': gaps_in,
+                'gaps_out': gaps_out,
+                'border_color': border_color,
+                'border_size': border_size,
+                'blur_enabled': blur_enabled,
+                'blur_size': blur_size,
+                'rounding': rounding,
+                'animations_enabled': animations_enabled
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error getting current Hyprland config: {e}")
+            return {}
+    
+    def get_preview_hyprland_config(self):
+        """Get preview configuration from HyprRice settings."""
+        try:
+            if hasattr(self.config, 'hyprland'):
+                hyprland = self.config.hyprland
+                return {
+                    'gaps_in': getattr(hyprland, 'gaps_in', 5),
+                    'gaps_out': getattr(hyprland, 'gaps_out', 10),
+                    'border_color': getattr(hyprland, 'border_color', '#5e81ac'),
+                    'border_size': getattr(hyprland, 'border_size', 2),
+                    'blur_enabled': getattr(hyprland, 'blur_enabled', True),
+                    'blur_size': getattr(hyprland, 'blur_size', 8),
+                    'rounding': getattr(hyprland, 'rounding', 8),
+                    'animations_enabled': getattr(hyprland, 'animations_enabled', True)
+                }
+            return {}
+        except Exception as e:
+            self.logger.error(f"Error getting preview config: {e}")
+            return {}
+    
+    def update_config_diff(self, current_config, preview_config):
+        """Update the configuration diff display."""
+        try:
+            diff_lines = []
+            diff_lines.append("Configuration Changes:")
+            diff_lines.append("=" * 50)
+            
+            changes_found = False
+            
+            for key, current_value in current_config.items():
+                preview_value = preview_config.get(key, current_value)
+                if current_value != preview_value:
+                    changes_found = True
+                    key_display = key.replace('_', ' ').title()
+                    diff_lines.append(f"  {key_display}:")
+                    diff_lines.append(f"    Current:  {current_value}")
+                    diff_lines.append(f"    Preview:  {preview_value}")
+                    diff_lines.append("")
+            
+            if not changes_found:
+                diff_lines.append("  No changes detected")
+                diff_lines.append("  Current configuration matches preview")
+            
+            self.config_diff_text.setPlainText("\n".join(diff_lines))
+            
+        except Exception as e:
+            self.logger.error(f"Error updating config diff: {e}")
+            self.config_diff_text.setPlainText(f"Error generating diff: {str(e)}")
     
     def update_waybar_info(self):
         """Update Waybar configuration info."""
@@ -393,47 +599,52 @@ class PreviewWindow(QWidget):
             return False
     
     def apply_to_hyprland(self):
-        """Apply current configuration to Hyprland."""
+        """Apply current configuration to Hyprland using hyprctl."""
         try:
+            from ..utils import hyprctl
+            
             self.status_label.setText("Applying configuration to Hyprland...")
             self.progress_bar.setVisible(True)
             self.progress_bar.setRange(0, 100)
             
             success_count = 0
-            total_operations = 4
+            total_operations = 0
+            applied_commands = []
             
-            # Apply window settings
             if hasattr(self.config, 'hyprland'):
-                hyprland_config = {
-                    'general_border_size': getattr(self.config.hyprland, 'border_size', 2),
-                    'general_gaps_in': getattr(self.config.hyprland, 'gaps_in', 5),
-                    'general_gaps_out': getattr(self.config.hyprland, 'gaps_out', 10),
-                    'general_col_active_border': getattr(self.config.hyprland, 'border_color', '#5e81ac'),
-                }
+                hyprland = self.config.hyprland
                 
-                if self.window_manager.set_window_config(hyprland_config):
-                    success_count += 1
-            
-            self.progress_bar.setValue(25)
-            
-            # Apply display settings
-            display_config = {}
-            if self.display_manager.set_display_config(display_config):
-                success_count += 1
-            
-            self.progress_bar.setValue(50)
-            
-            # Apply input settings  
-            input_config = {}
-            if self.input_manager.set_input_config(input_config):
-                success_count += 1
-            
-            self.progress_bar.setValue(75)
-            
-            # Apply workspace settings
-            workspace_config = {}
-            if self.workspace_manager.set_workspace_config(workspace_config):
-                success_count += 1
+                # Apply general settings
+                commands = [
+                    ("general:gaps_in", getattr(hyprland, 'gaps_in', 5)),
+                    ("general:gaps_out", getattr(hyprland, 'gaps_out', 10)),
+                    ("general:border_size", getattr(hyprland, 'border_size', 2)),
+                    ("general:col.active_border", getattr(hyprland, 'border_color', '#5e81ac')),
+                    ("decoration:rounding", getattr(hyprland, 'rounding', 8)),
+                    ("decoration:blur:enabled", 1 if getattr(hyprland, 'blur_enabled', True) else 0),
+                    ("decoration:blur:size", getattr(hyprland, 'blur_size', 8)),
+                    ("animations:enabled", 1 if getattr(hyprland, 'animations_enabled', True) else 0),
+                ]
+                
+                total_operations = len(commands)
+                
+                for i, (option, value) in enumerate(commands):
+                    try:
+                        # Apply the setting
+                        returncode, stdout, stderr = hyprctl(f"keyword {option} {value}")
+                        
+                        if returncode == 0:
+                            success_count += 1
+                            applied_commands.append(f"✓ {option} = {value}")
+                        else:
+                            applied_commands.append(f"✗ {option} = {value} (failed: {stderr})")
+                        
+                        # Update progress
+                        progress = int((i + 1) / total_operations * 100)
+                        self.progress_bar.setValue(progress)
+                        
+                    except Exception as e:
+                        applied_commands.append(f"✗ {option} = {value} (error: {str(e)})")
             
             self.progress_bar.setValue(100)
             
@@ -441,20 +652,29 @@ class PreviewWindow(QWidget):
             if success_count == total_operations:
                 self.status_label.setText("✅ Configuration applied successfully!")
                 self.config_applied.emit("success")
-            else:
-                self.status_label.setText(f"⚠️ Partial success: {success_count}/{total_operations} operations")
+                
+                # Update the preview to reflect applied changes
+                self.update_preview()
+                
+            elif success_count > 0:
+                self.status_label.setText(f"⚠️ {success_count}/{total_operations} settings applied")
                 self.config_applied.emit("partial")
+            else:
+                self.status_label.setText("❌ Failed to apply configuration")
+                self.config_applied.emit("failed")
             
-            self.progress_bar.setVisible(False)
-            
-            # Refresh preview after applying
-            QTimer.singleShot(1000, self.update_preview)
+            # Show detailed results
+            result_text = "Applied Commands:\n" + "\n".join(applied_commands)
+            self.config_diff_text.setPlainText(result_text)
             
         except Exception as e:
             self.progress_bar.setVisible(False)
-            self.status_label.setText(f"❌ Apply failed: {str(e)}")
+            self.status_label.setText(f"❌ Error applying configuration: {str(e)}")
             self.config_applied.emit("error")
-            self.logger.error(f"Apply to Hyprland error: {e}")
+            self.logger.error(f"Error applying to Hyprland: {e}")
+            
+            # Refresh preview after applying
+            QTimer.singleShot(1000, self.update_preview)
     
     def start_auto_refresh(self):
         """Start auto-refresh timer."""

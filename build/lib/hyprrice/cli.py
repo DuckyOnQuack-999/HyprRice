@@ -21,7 +21,6 @@ from hyprrice.config import Config
 from hyprrice.utils import check_dependencies, setup_logging
 from hyprrice.plugins import EnhancedPluginManager
 from hyprrice.migration import check_migration_needed, migrate_config
-from hyprrice.gui.theme_manager import ThemeManager
 from hyprrice.exceptions import HyprRiceError
 
 
@@ -186,28 +185,53 @@ Examples:
     return parser
 
 
+def _create_gui_app(config: Config = None) -> tuple:
+    """Create QApplication and HyprRiceGUI window for testing."""
+    from PyQt6.QtCore import QCoreApplication, Qt
+    from PyQt6.QtWidgets import QApplication
+    from hyprrice.main_gui import HyprRiceGUI
+    
+    # Set attributes before QApplication is created
+    if not QApplication.instance():
+        # High-DPI attributes are deprecated in PyQt6, but we can still set them
+        try:
+            QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
+            QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
+        except AttributeError:
+            # These attributes may not be available in newer PyQt6 versions
+            pass
+        app = QApplication(sys.argv or [])
+    else:
+        app = QApplication.instance()
+    
+    app.setApplicationName("HyprRice")
+    app.setApplicationVersion("1.0.0")
+    
+    # Load config if not provided
+    if config is None:
+        config = Config()
+    
+    # Create main window
+    window = HyprRiceGUI(config)
+    
+    return app, window
+
+
 def cmd_gui(args: argparse.Namespace) -> int:
     """Launch the HyprRice GUI."""
     try:
-        from hyprrice.main_gui import HyprRiceGUI
-        from PyQt5.QtWidgets import QApplication
-        
-        app = QApplication(sys.argv)
-        app.setApplicationName("HyprRice")
-        app.setApplicationVersion("1.0.0")
-        
         # Load config if specified
         config = None
-        if args.config:
+        if hasattr(args, 'config') and args.config:
             config = Config.load(args.config)
         else:
             config = Config()
         
-        # Create and show main window
-        window = HyprRiceGUI(config)
+        # Create app and window
+        app, window = _create_gui_app(config)
         
         # Load theme if specified
-        if args.theme:
+        if hasattr(args, 'theme') and args.theme:
             try:
                 window.theme_manager.load_theme(args.theme)
                 print(f"Loaded theme: {args.theme}")
@@ -216,11 +240,11 @@ def cmd_gui(args: argparse.Namespace) -> int:
         
         window.show()
         
-        return app.exec_()
+        return app.exec()
         
     except ImportError as e:
         print(f"Error: Could not import GUI components: {e}")
-        print("Make sure PyQt5 is installed: pip install PyQt5")
+        print("Make sure PyQt6 is installed: pip install PyQt6")
         return 1
     except Exception as e:
         print(f"Error launching GUI: {e}")

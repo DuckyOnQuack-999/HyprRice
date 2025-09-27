@@ -253,7 +253,8 @@ class PluginManagerDialog(QDialog):
         layout = QVBoxLayout(self)
         
         # Create splitter for plugin list and details
-        splitter = QSplitter(Qt.Horizontal)
+        from PyQt6.QtCore import Qt
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         
         # Left side: Plugin list
         left_widget = QWidget()

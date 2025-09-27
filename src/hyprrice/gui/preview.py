@@ -259,7 +259,7 @@ class PreviewWindow(QWidget):
         # Waybar mockup
         waybar_mockup = QFrame()
         waybar_mockup.setFixedHeight(35)
-        waybar_mockup.setFrameStyle(QFrame.Box)
+        waybar_mockup.setFrameStyle(QFrame.Shape.Box)
         waybar_layout.addWidget(waybar_mockup)
         self.waybar_mockup = waybar_mockup
         
