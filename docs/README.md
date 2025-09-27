@@ -13,6 +13,7 @@ Welcome to the comprehensive documentation for HyprRice - a modern GUI tool for 
 ### User Guides
 - **[Configuration Guide](configuration.md)** - Complete configuration reference
 - **[Plugin Guide](plugins.md)** - Using and developing plugins
+- **[AI Workflow Guide](ai_workflow.md)** - AI-powered component enhancement
 - **[Security Guide](security.md)** - Security features and best practices
 - **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
 
@@ -29,6 +30,7 @@ Welcome to the comprehensive documentation for HyprRice - a modern GUI tool for 
 - **Plugin System** - Extensible architecture with sandboxing
 - **Configuration Backup** - Automatic backup and restore
 - **Live Preview** - Real-time configuration preview
+- **AI Workflow System** - Automated component enhancement pipeline
 
 ### Security Features
 - **Input Validation** - Comprehensive input sanitization

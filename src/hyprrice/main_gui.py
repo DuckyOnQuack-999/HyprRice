@@ -26,6 +26,7 @@ from .gui.tabs import (
     HyprlandTab, WaybarTab, RofiTab, NotificationsTab,
     ClipboardTab, LockscreenTab, ThemesTab, SettingsTab, PluginsTab
 )
+from .gui.ai_workflow_tab import AIWorkflowTab
 from .gui.preview import PreviewWindow
 from .gui.theme_manager import ThemeManager
 from .gui.modern_theme import ModernTheme
@@ -609,6 +610,10 @@ class HyprRiceGUI(QMainWindow):
         # Plugins tab
         self.plugins_tab = PluginsTab(self.config, self.plugin_manager, self)
         self.tab_widget.addTab(self.plugins_tab, "Plugins")
+        
+        # AI Workflow tab
+        self.ai_workflow_tab = AIWorkflowTab(self.config)
+        self.tab_widget.addTab(self.ai_workflow_tab, "AI Workflow")
         
         # Connect signals
         for tab in [self.hyprland_tab, self.waybar_tab, self.rofi_tab,
