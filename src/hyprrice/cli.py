@@ -190,7 +190,7 @@ def cmd_gui(args: argparse.Namespace) -> int:
     """Launch the HyprRice GUI."""
     try:
         from hyprrice.main_gui import HyprRiceGUI
-        from PyQt6.QtWidgets import QApplication
+        from PyQt5.QtWidgets import QApplication
         
         app = QApplication(sys.argv)
         app.setApplicationName("HyprRice")
