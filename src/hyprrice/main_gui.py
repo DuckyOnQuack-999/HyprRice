@@ -327,10 +327,11 @@ class HyprRiceGUI(QMainWindow):
                 # Add tooltip showing the shortcut
                 if hasattr(action, '__self__') and hasattr(action.__self__, 'setToolTip'):
                     current_tooltip = action.__self__.toolTip()
+                    shortcut_text = str(shortcut_key)
                     if current_tooltip:
-                        action.__self__.setToolTip(f"{current_tooltip} ({shortcut_key.toString()})")
+                        action.__self__.setToolTip(f"{current_tooltip} ({shortcut_text})")
                     else:
-                        action.__self__.setToolTip(f"Shortcut: {shortcut_key.toString()}")
+                        action.__self__.setToolTip(f"Shortcut: {shortcut_text}")
                         
             except Exception as e:
                 self.logger.warning(f"Failed to setup shortcut {shortcut_key}: {e}")

@@ -94,6 +94,7 @@ class HyprlandTab(BaseTab):
         # List of sourced files
         self.sourced_files_list = QListWidget()
         self.sourced_files_list.setMaximumHeight(120)
+        from PyQt6.QtCore import Qt
         self.sourced_files_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.sourced_files_list.customContextMenuRequested.connect(self._show_sourced_file_context_menu)
         self._populate_sourced_files()

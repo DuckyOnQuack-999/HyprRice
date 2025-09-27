@@ -222,7 +222,7 @@ def cmd_gui(args: argparse.Namespace) -> int:
     try:
         # Load config if specified
         config = None
-        if args.config:
+        if hasattr(args, 'config') and args.config:
             config = Config.load(args.config)
         else:
             config = Config()
@@ -231,7 +231,7 @@ def cmd_gui(args: argparse.Namespace) -> int:
         app, window = _create_gui_app(config)
         
         # Load theme if specified
-        if args.theme:
+        if hasattr(args, 'theme') and args.theme:
             try:
                 window.theme_manager.load_theme(args.theme)
                 print(f"Loaded theme: {args.theme}")
