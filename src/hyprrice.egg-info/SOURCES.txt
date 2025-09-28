@@ -5,6 +5,7 @@ setup.py
 data/default_config.yaml
 data/hyprrice.desktop
 src/hyprrice/__init__.py
+src/hyprrice/__main__.py
 src/hyprrice/backup.py
 src/hyprrice/backup_manager.py
 src/hyprrice/cli.py
@@ -26,6 +27,7 @@ src/hyprrice.egg-info/SOURCES.txt
 src/hyprrice.egg-info/dependency_links.txt
 src/hyprrice.egg-info/entry_points.txt
 src/hyprrice.egg-info/not-zip-safe
+src/hyprrice.egg-info/requires.txt
 src/hyprrice.egg-info/top_level.txt
 src/hyprrice/gui/__init__.py
 src/hyprrice/gui/backup_manager.py

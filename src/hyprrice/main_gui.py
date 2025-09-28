@@ -81,7 +81,12 @@ class HyprRiceGUI(QMainWindow):
         self.logger = logging.getLogger(__name__)
         
         # Initialize managers
-        self.theme_manager = ThemeManager(themes_dir=os.path.join(os.path.dirname(__file__), '../../themes'))
+        # Get themes directory - handle both development and installed package cases
+        themes_dir = os.path.join(os.path.dirname(__file__), '../../themes')
+        if not os.path.exists(themes_dir):
+            # Fallback for installed package - use user's home directory
+            themes_dir = os.path.expanduser("~/.hyprrice/themes")
+        self.theme_manager = ThemeManager(themes_dir=themes_dir)
         self.modern_theme = ModernTheme()
         
         # Initialize enhanced plugin system with security settings
