@@ -174,7 +174,7 @@ class ModernTheme(QObject):
             background-color: {colors['glass_bg']};
             border: 1px solid {colors['glass_border']};
             border-radius: 16px;
-            backdrop-filter: blur(10px);
+            /* removed unsupported backdrop-filter */
         }}
         
         /* Navigation Tree - Modern */
@@ -259,25 +259,23 @@ class ModernTheme(QObject):
             font-weight: 600;
             min-height: 24px;
             font-size: 14px;
-            box-shadow: 0 2px 8px {colors['shadow_light']};
+            /* removed unsupported box-shadow */
         }}
         
         QPushButton:hover {{
             background-color: {colors['accent_hover']};
-            box-shadow: 0 4px 12px {colors['shadow']};
-            transform: translateY(-1px);
+            /* removed unsupported box-shadow/transform */
         }}
         
         QPushButton:pressed {{
             background-color: {colors['accent_pressed']};
-            box-shadow: 0 1px 4px {colors['shadow']};
-            transform: translateY(0px);
+            /* removed unsupported box-shadow/transform */
         }}
         
         QPushButton:disabled {{
             background-color: {colors['bg_tertiary']};
             color: {colors['text_disabled']};
-            box-shadow: none;
+            /* removed unsupported box-shadow */
         }}
         
         /* Secondary buttons */
@@ -285,13 +283,13 @@ class ModernTheme(QObject):
             background-color: {colors['bg_secondary']};
             color: {colors['text_primary']};
             border: 1px solid {colors['border']};
-            box-shadow: 0 2px 4px {colors['shadow_light']};
+            /* removed unsupported box-shadow */
         }}
         
         QPushButton[class="secondary"]:hover {{
             background-color: {colors['bg_hover']};
             border-color: {colors['border_hover']};
-            box-shadow: 0 4px 8px {colors['shadow']};
+            /* removed unsupported box-shadow */
         }}
         
         /* Ghost buttons */
@@ -322,7 +320,7 @@ class ModernTheme(QObject):
             border-color: {colors['border_focus']};
             border-width: 2px;
             outline: none;
-            box-shadow: 0 0 0 3px {colors['accent_light']};
+            /* removed unsupported box-shadow */
         }}
         
         QLineEdit:hover, QTextEdit:hover, QPlainTextEdit:hover {{

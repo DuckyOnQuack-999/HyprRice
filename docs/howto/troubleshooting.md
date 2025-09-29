@@ -116,6 +116,51 @@ Common issues and solutions when using HyprRice.
    rm ~/.config/hyprrice/ui.conf
    ```
 
+### 6. Configuration Editor Issues (New in v1.0)
+
+**Symptoms:**
+- Configuration Editor won't open
+- Files not saving properly
+- Permission errors
+
+**Solutions:**
+1. Check file permissions:
+   ```bash
+   ls -l ~/.config/hypr/
+   ```
+
+2. Use Debug Mode to identify issues:
+   ```bash
+   hyprrice gui --debug
+   ```
+
+3. Verify file paths in configuration:
+   ```bash
+   hyprrice doctor
+   ```
+
+### 7. Debug Mode Issues (New in v1.0)
+
+**Symptoms:**
+- Debug Mode fails to run
+- Incomplete debug reports
+- Performance issues during analysis
+
+**Solutions:**
+1. Check system resources:
+   ```bash
+   free -h
+   df -h
+   ```
+
+2. Run with verbose logging:
+   ```bash
+   hyprrice gui --debug --verbose
+   ```
+
+3. Save debug report for analysis:
+   - Use Tools → Debug Mode → Save Report
+
 ## Log Files
 
 ### Main Logs
@@ -195,4 +240,14 @@ grep ERROR ~/.local/share/hyprrice/hyprrice.log
 4. **Monitoring Logs**
    ```bash
    hyprrice log-monitor
+   ```
+
+5. **Regular System Analysis (New in v1.0)**
+   ```bash
+   hyprrice gui --debug
+   ```
+
+6. **Configuration Validation**
+   ```bash
+   hyprrice doctor
    ``` 

@@ -27,8 +27,13 @@ class HistoryEntry:
 class BackupManager:
     """Manages configuration backups and history."""
     
-    def __init__(self, config: Config):
-        self.config = config
+    def __init__(self, config_or_backup_dir):
+        # Handle both Config object and backup_dir string for backward compatibility
+        if isinstance(config_or_backup_dir, Config):
+            self.config = config_or_backup_dir
+        else:
+            # If string path provided, create a minimal config-like object
+            self.config = type('Config', (), {'paths': type('Paths', (), {'backup_dir': config_or_backup_dir})()})()
         self.logger = logging.getLogger(__name__)
         self.history: List[HistoryEntry] = []
         self.undo_stack: List[HistoryEntry] = []

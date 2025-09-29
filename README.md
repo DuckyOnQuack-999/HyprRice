@@ -31,22 +31,33 @@ HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland c
 - **Ecosystem Tools**: Terminal, file manager, screenshot tools, audio
 
 ### 🎯 **User Experience**
-- Modern, responsive PyQt5 GUI optimized for Wayland
-- Live preview system for animations and color schemes
+- Modern, responsive PyQt6 GUI optimized for Wayland with UI stability fixes
+- Live preview system for animations and color schemes with debounced updates
 - Theme system with gallery and import/export capabilities
 - Auto-backup and rollback functionality
 - Beginner-friendly presets and advanced customization options
+- Configuration editor for manual file editing
+- Debug mode for system analysis and troubleshooting
+- Package options for easy installation across distributions
+- Import Wizard (MVP) for importing configurations from popular dotfiles
+- Wayland-safe rendering mode and UI reset functionality
 
 ### 🔧 **Technical Excellence**
 - Modular, extensible architecture with plugin support
 - Robust error handling and validation
 - Configuration parsing and syntax validation
 - Performance optimized for low resource usage
-- Full Wayland compatibility
+- Full Wayland compatibility with UI stability improvements
+- Advanced security with plugin sandboxing
+- Enhanced theme preview with expanded Hyprland options support
+- Comprehensive testing and debugging tools
 
 ### 🆕 **What's New in v1.0.0**
 - **PyQt6 Migration**: Upgraded to PyQt6 for modern, sleek UI with better Wayland support
 - **Modern Theme System**: New QSS-based theming with dark/light modes and accent colors
+- **UI Stability Fixes**: Resolved glitches, click-through issues, and rendering problems
+- **Enhanced Live Preview**: Debounced updates, DPR-aware rendering, and expanded Hyprland options
+- **Wayland Compatibility**: Improved Wayland session detection and safe rendering mode
 - **Fixed Installation & Runtime Issues**: Resolved entry points, hyprctl API, and GUI startup problems
 - **Modern Python Packaging**: Updated to use `pyproject.toml` with SPDX license format, no setuptools warnings
 - **Enhanced CLI**: Improved `hyprrice doctor`, `hyprrice migrate`, and `hyprrice gui` commands
@@ -57,6 +68,13 @@ HyprRice is an advanced, all-encompassing ricing tool for the Hyprland Wayland c
 - **Security Features**: Input validation, path restrictions, and command sanitization
 - **Performance Monitoring**: Built-in performance tracking and optimization
 - **Comprehensive Testing**: 298+ tests covering all major functionality
+- **🆕 Configuration Editor**: Dedicated text editor for manual configuration file editing
+- **🆕 Debug Mode**: Comprehensive system analysis and testing with detailed reports
+- **🆕 Enhanced Sourced Files Management**: GUI for managing external configuration files
+- **🆕 Template System**: Auto-generation of configuration files with customizable templates (examples only)
+- **🆕 Advanced Security**: Plugin sandboxing with resource limits and import restrictions
+- **🆕 Package Options**: Comprehensive package management options for all major distributions
+- **🆕 Critical Stability Fixes**: Resolved plugin import errors, Qt compatibility issues, JSON parsing errors, and memory optimization
 
 ## 📦 Installation
 
@@ -74,16 +92,18 @@ Ensure you have the following system dependencies installed:
 ```bash
 # Arch Linux / Manjaro
 sudo pacman -S hyprland waybar rofi dunst swww grim slurp cliphist hyprlock \
-    python-pyqt6 python-pillow python-yaml python-gobject
+    python-pyqt6 python-pillow python-yaml python-gobject qt6-wayland
 
 # Ubuntu / Debian
 sudo apt install hyprland waybar rofi dunst swww grim slurp cliphist hyprlock \
-    python3-pyqt6 python3-pil python3-yaml python3-gi
+    python3-pyqt6 python3-pil python3-yaml python3-gi qt6-wayland
 
 # Fedora
 sudo dnf install hyprland waybar rofi dunst swww grim slurp cliphist hyprlock \
-    python3-qt6 python3-pillow python3-pyyaml python3-gobject
+    python3-qt6 python3-pillow python3-pyyaml python3-gobject qt6-qtwayland
 ```
+
+**Note**: `qt6-wayland` (or `qt6-qtwayland`) is required for proper Wayland support with PyQt6.
 
 ### Install HyprRice (Manual)
 
@@ -140,6 +160,9 @@ hyprrice plugins list
 
 # Migrate configuration (if needed)
 hyprrice migrate
+
+# Run debug mode for comprehensive system analysis
+hyprrice gui --debug
 ```
 
 ## 🚀 Quick Start
@@ -384,6 +407,9 @@ pytest -n auto
 - Backup and migration systems
 - Configuration management
 - Error handling and validation
+- PyQt6 compatibility and enum usage
+- JSON parsing and subprocess handling
+- Memory management and performance optimization
 
 ## 🤝 Contributing
 
@@ -440,7 +466,20 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Hyprland](https://github.com/hyprwm/Hyprland) - The amazing Wayland compositor
 - [Waybar](https://github.com/Alexays/Waybar) - Highly customizable Wayland bar
 - [Rofi](https://github.com/davatorium/rofi) - Window switcher and launcher
-- [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) - GUI framework
+- [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - Modern GUI framework
+- [Qt6](https://www.qt.io/) - Cross-platform application framework
+- [Python](https://www.python.org/) - Programming language
+- [Wayland](https://wayland.freedesktop.org/) - Display server protocol
+
+### 🎨 Inspiration and References
+
+HyprRice v1.0 draws inspiration from excellent Hyprland configurations and best practices:
+
+- **[ML4W Dotfiles](https://github.com/mylinuxforwork/dotfiles)** - Cross-distro installation flows and setup scripts
+- **[end-4 dots-hyprland](https://github.com/end-4/dots-hyprland)** - Modular configuration layout and AI integration
+- **[end-4 Hyprland Wiki](https://end-4.github.io/dots-hyprland-wiki/en/)** - Hyprland configuration conventions and best practices
+
+These projects have influenced HyprRice's template system, modular configuration approach, and package management options.
 
 ## 📞 Support & Troubleshooting
 
@@ -484,12 +523,39 @@ hyprrice gui
 - Check PyQt6 installation: `python -c "import PyQt6; print('OK')"`
 - Try running with debug mode: `hyprrice gui --debug`
 - For HiDPI displays, ensure proper scaling: `export QT_SCALE_FACTOR=1.5`
+- Use the new Configuration Editor for manual file editing
+- Run Debug Mode for comprehensive system analysis
+- **Fixed in v1.0.0**: All PyQt6 compatibility issues resolved, including enum usage and timer handling
 
 ### Performance Tips
 - Use `hyprrice doctor` to identify missing dependencies
 - Enable performance monitoring in preferences
 - Use the backup system before major changes
 - Keep your configuration files organized
+- Use Debug Mode for system analysis and optimization
+- Leverage the Configuration Editor for advanced customization
+- **Optimized in v1.0.0**: Memory management improved with automatic garbage collection and reduced UI update frequency
+
+## 🎉 HyprRice v1.0.0 Release
+
+HyprRice v1.0.0 represents a major milestone in the project's development, bringing enterprise-grade features and reliability to the Hyprland ecosystem. This release includes:
+
+- **Production-Ready Quality**: Comprehensive testing, security hardening, and performance optimization
+- **Modern Architecture**: PyQt6 migration, advanced plugin system, and extensible design
+- **Enhanced User Experience**: Configuration editor, debug mode, and improved GUI
+- **Advanced Security**: Plugin sandboxing, input validation, and secure file handling
+- **Comprehensive Documentation**: Updated guides, troubleshooting, and API references
+- **Critical Stability Fixes**: Resolved all major runtime issues including plugin imports, Qt compatibility, JSON parsing, and memory optimization
+
+### What's Next
+
+HyprRice v1.0.0 provides a solid foundation for future development. Planned features for upcoming releases include:
+
+- Enhanced theme marketplace integration
+- Advanced animation presets
+- Cloud configuration sync
+- Mobile companion app
+- Advanced plugin marketplace
 
 ---
 

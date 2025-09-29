@@ -121,7 +121,10 @@ def main() -> int:
         create_directories()
         
         # Load configuration
-        config = Config(config_path=args.config)
+        if args.config:
+            config = Config.load(args.config)
+        else:
+            config = Config.load()
         
         # Disable backups if requested
         if args.no_backup:

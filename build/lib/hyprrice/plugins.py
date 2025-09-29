@@ -127,16 +127,26 @@ class EnhancedPluginManager:
         
     def _discover_plugins(self):
         """Discover all available plugins."""
-        if not self.plugins_dir.exists():
-            self.logger.warning(f"Plugins directory does not exist: {self.plugins_dir}")
-            return
-            
-        for plugin_file in self.plugins_dir.glob("*.py"):
-            if plugin_file.name.startswith('_'):
-                continue
-                
-            plugin_name = plugin_file.stem
-            self.available_plugins[plugin_name] = plugin_file
+        # Discover user plugins
+        if self.plugins_dir.exists():
+            for plugin_file in self.plugins_dir.glob("*.py"):
+                if plugin_file.name.startswith('_'):
+                    continue
+                    
+                plugin_name = plugin_file.stem
+                self.available_plugins[plugin_name] = plugin_file
+        
+        # Discover builtin plugins
+        builtin_plugins_dir = Path(__file__).parent / "plugins_builtin"
+        if builtin_plugins_dir.exists():
+            for plugin_file in builtin_plugins_dir.glob("*.py"):
+                if plugin_file.name.startswith('_'):
+                    continue
+                    
+                plugin_name = plugin_file.stem
+                # Don't override user plugins with builtin ones
+                if plugin_name not in self.available_plugins:
+                    self.available_plugins[plugin_name] = plugin_file
             
             # Try to load metadata without loading the plugin
             try:
@@ -264,10 +274,20 @@ class EnhancedPluginManager:
         """Load plugin without sandboxing (for backward compatibility)."""
         plugin_path = self.available_plugins[plugin_name]
         
-        # Load the plugin module
-        spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        # Check if it's a builtin plugin and use fully-qualified import
+        if "plugins_builtin" in str(plugin_path):
+            try:
+                # Import builtin plugin using fully-qualified module path
+                module_name = f"hyprrice.plugins_builtin.{plugin_name}"
+                module = importlib.import_module(module_name)
+            except ImportError as e:
+                self.logger.error(f"Failed to import builtin plugin {plugin_name}: {e}")
+                raise PluginError(f"Failed to import builtin plugin {plugin_name}: {e}")
+        else:
+            # Load user plugin from file
+            spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
         
         # Find the plugin class
         plugin_class = None

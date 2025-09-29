@@ -1,0 +1,185 @@
+{
+  "timestamp": "2025-09-28T08:30:17.933828",
+  "version": "1.0.0",
+  "python_version": "3.13.7",
+  "platform": "linux",
+  "wayland_display": "wayland-1",
+  "hyprland_running": true,
+  "hyprland_version": "Unknown",
+  "dependencies": {
+    "hyprland": {
+      "available": true,
+      "version": "Hyprland 0.51.1 built from branch  at commit 71a1216abcc7031776630a6d88f105605c4dc1c9  ([gha] Nix: update inputs).",
+      "path": "/usr/bin/hyprctl",
+      "required": true,
+      "description": "Hyprland Wayland compositor",
+      "install_command": "sudo pacman -S hyprland  # Arch\nsudo apt install hyprland  # Ubuntu/Debian\nsudo dnf install hyprland  # Fedora"
+    },
+    "waybar": {
+      "available": true,
+      "version": "Waybar v0.14.0",
+      "path": "/usr/bin/waybar",
+      "required": true,
+      "description": "Waybar status bar",
+      "install_command": "sudo pacman -S waybar  # Arch\nsudo apt install waybar  # Ubuntu/Debian\nsudo dnf install waybar  # Fedora"
+    },
+    "rofi": {
+      "available": true,
+      "version": "Unknown",
+      "path": "/usr/bin/rofi",
+      "required": true,
+      "description": "Rofi application launcher",
+      "install_command": "sudo pacman -S rofi  # Arch\nsudo apt install rofi  # Ubuntu/Debian\nsudo dnf install rofi  # Fedora"
+    },
+    "dunst": {
+      "available": true,
+      "version": "Dunst - A customizable and lightweight notification-daemon 1.13.0 (2025-08-04)",
+      "path": "/usr/bin/dunst",
+      "required": false,
+      "description": "Dunst notification daemon",
+      "install_command": "sudo pacman -S dunst  # Arch\nsudo apt install dunst  # Ubuntu/Debian\nsudo dnf install dunst  # Fedora"
+    },
+    "mako": {
+      "available": true,
+      "version": null,
+      "path": "/usr/bin/mako",
+      "required": false,
+      "description": "Mako notification daemon",
+      "install_command": "sudo pacman -S mako  # Arch\nsudo apt install mako  # Ubuntu/Debian\nsudo dnf install mako  # Fedora"
+    },
+    "grim": {
+      "available": true,
+      "version": "",
+      "path": "/usr/bin/grim",
+      "required": false,
+      "description": "Grim screenshot tool",
+      "install_command": "sudo pacman -S grim  # Arch\nsudo apt install grim  # Ubuntu/Debian\nsudo dnf install grim  # Fedora"
+    },
+    "slurp": {
+      "available": true,
+      "version": "623,81 797x503",
+      "path": "/usr/bin/slurp",
+      "required": false,
+      "description": "Slurp area selection tool",
+      "install_command": "sudo pacman -S slurp  # Arch\nsudo apt install slurp  # Ubuntu/Debian\nsudo dnf install slurp  # Fedora"
+    },
+    "cliphist": {
+      "available": true,
+      "version": "",
+      "path": "/usr/bin/cliphist",
+      "required": false,
+      "description": "Cliphist clipboard manager",
+      "install_command": "sudo pacman -S cliphist  # Arch\nsudo apt install cliphist  # Ubuntu/Debian"
+    },
+    "hyprlock": {
+      "available": true,
+      "version": "Hyprlock version v0.9.1",
+      "path": "/usr/bin/hyprlock",
+      "required": false,
+      "description": "Hyprlock screen locker",
+      "install_command": "sudo pacman -S hyprlock  # Arch\nsudo apt install hyprlock  # Ubuntu/Debian"
+    },
+    "swww": {
+      "available": true,
+      "version": "swww 0.11.2",
+      "path": "/usr/bin/swww",
+      "required": false,
+      "description": "Swww wallpaper daemon",
+      "install_command": "sudo pacman -S swww  # Arch\nsudo apt install swww  # Ubuntu/Debian"
+    },
+    "hyprpaper": {
+      "available": true,
+      "version": null,
+      "path": "/usr/bin/hyprpaper",
+      "required": false,
+      "description": "Hyprpaper wallpaper utility",
+      "install_command": "sudo pacman -S hyprpaper  # Arch\nsudo apt install hyprpaper  # Ubuntu/Debian"
+    },
+    "python_pyqt6": {
+      "available": true,
+      "version": "Unknown",
+      "path": null,
+      "required": true,
+      "description": "PyQt6 Python module",
+      "install_command": "pip install PyQt6"
+    },
+    "python_pyyaml": {
+      "available": true,
+      "version": "6.0.3",
+      "path": null,
+      "required": true,
+      "description": "PyYAML Python module",
+      "install_command": "pip install PyYAML"
+    },
+    "python_psutil": {
+      "available": true,
+      "version": "7.1.0",
+      "path": null,
+      "required": true,
+      "description": "psutil Python module",
+      "install_command": "pip install psutil"
+    },
+    "system": {
+      "available": true,
+      "version": "Linux 6.16.9-1-cachyos",
+      "path": null,
+      "required": false,
+      "description": "Operating system",
+      "install_command": "N/A"
+    },
+    "wayland": {
+      "available": "wayland-1",
+      "version": "Wayland session detected",
+      "path": null,
+      "required": true,
+      "description": "Wayland session",
+      "install_command": "Use a Wayland-compatible display manager"
+    }
+  },
+  "config_path": "/home/duckyonquack999/.config/hyprrice/config.yaml",
+  "config_valid": true,
+  "config_errors": [],
+  "file_permissions": {
+    "/home/duckyonquack999/.config/hypr/hyprland.conf": "644",
+    "/home/duckyonquack999/.config/waybar": "755",
+    "/home/duckyonquack999/.config/rofi": "755",
+    "/home/duckyonquack999/.hyprrice/backups": "755",
+    "/home/duckyonquack999/.hyprrice/logs": "755",
+    "/home/duckyonquack999/.hyprrice/themes": "755"
+  },
+  "system_info": {
+    "name": "Arch Linux",
+    "pretty_name": "Arch Linux",
+    "id": "arch",
+    "build_id": "rolling",
+    "ansi_color": "38;2;23;147;209",
+    "home_url": "https://archlinux.org/",
+    "documentation_url": "https://wiki.archlinux.org/",
+    "support_url": "https://bbs.archlinux.org/",
+    "bug_report_url": "https://gitlab.archlinux.org/groups/archlinux/-/issues",
+    "privacy_policy_url": "https://terms.archlinux.org/docs/privacy-policy",
+    "logo": "archlinux-logo",
+    "cpu_model": "0",
+    "cpu_cores": 16,
+    "total_memory": "16280564 KB",
+    "display": ":0",
+    "wayland_display": "wayland-1",
+    "xdg_session_type": "wayland",
+    "path": "/home/duckyonquack999/.local/bin:/home/duckyonquack999/.local/bin:/home/duckyonquack999/.local/bin:/home/duckyonquack999/.bin:/home/duckyonquack999/.local/bin:/home/duckyonquack999/.local/bin:/home/duckyonquack999/.local/bin:/home/duckyonquack999/.bin:/tmp/.mount_Cursorm8NAKJ/usr/bin/:/tmp/.mount_Cursorm8NAKJ/usr/sbin/:/tmp/.mount_Cursorm8NAKJ/usr/games/:/tmp/.mount_Cursorm8NAKJ/bin/:/tmp/.mount_Cursorm8NAKJ/sbin/:/usr/local/sbin:/usr/local/bin:/usr/bin:/opt/android-sdk/platform-tools:/opt/cuda/bin:/opt/cuda/nsight_compute:/opt/cuda/nsight_systems/bin:/var/lib/flatpak/exports/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/var/lib/snapd/snap/bin:/opt/android-sdk/platform-tools:/opt/android-sdk/platform-tools",
+    "home": "/home/duckyonquack999",
+    "user": "duckyonquack999",
+    "plugin_files_count": 0,
+    "available_plugins": 2,
+    "available_themes": 3,
+    "backup_files_count": 18
+  },
+  "performance_metrics": {
+    "memory_usage_mb": 98.14453125,
+    "cpu_percent": 0.0,
+    "system_load": 2.48876953125,
+    "disk_usage_percent": 80.05605447732033,
+    "debug_analysis_time": 6.393378734588623
+  },
+  "error_log": [],
+  "warnings": []
+}

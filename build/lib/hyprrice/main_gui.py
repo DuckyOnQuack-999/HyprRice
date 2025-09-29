@@ -79,13 +79,18 @@ class HyprRiceGUI(QMainWindow):
         super().__init__()
         self.config = config
         self.logger = logging.getLogger(__name__)
+        from .utils import create_directories
+        create_directories()
         
         # Initialize managers
-        self.theme_manager = ThemeManager(themes_dir=os.path.join(os.path.dirname(__file__), '../../themes'))
+        self.theme_manager = ThemeManager(themes_dir=self.config.paths.theme_dir)
         self.modern_theme = ModernTheme()
         
         # Initialize enhanced plugin system with security settings
-        plugins_dir = Path(__file__).parent.parent.parent / "plugins"
+        plugins_dir = Path.home() / '.hyprrice' / 'plugins'
+        
+        # Initialize debug mode
+        self.debug_mode = None
         
         # Get security settings from config
         enable_sandbox = False  # Default to False for file-based plugins
@@ -404,7 +409,7 @@ class HyprRiceGUI(QMainWindow):
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Help)
         
         # Connect help button
-        if msg_box.clickedButton(msg_box.button(QMessageBox.StandardButton.Help)):
+        if msg_box.clickedButton() == msg_box.button(QMessageBox.StandardButton.Help):
             self.show_help()
         
         msg_box.exec()
@@ -646,6 +651,11 @@ class HyprRiceGUI(QMainWindow):
         
         file_menu.addSeparator()
         
+        config_editor_action = file_menu.addAction("&Configuration Editor")
+        config_editor_action.triggered.connect(self._open_config_editor)
+        
+        file_menu.addSeparator()
+        
         export_action = file_menu.addAction("&Export Configuration")
         export_action.triggered.connect(self.export_config)
         
@@ -695,6 +705,22 @@ class HyprRiceGUI(QMainWindow):
         
         restore_action = tools_menu.addAction("&Restore")
         restore_action.triggered.connect(self.restore_config)
+        
+        tools_menu.addSeparator()
+        
+        debug_action = tools_menu.addAction("&Debug Mode")
+        debug_action.triggered.connect(self._open_debug_mode)
+
+        tests_action = tools_menu.addAction("&Run Tests")
+        tests_action.triggered.connect(self._run_tests)
+
+        tools_menu.addSeparator()
+
+        package_options_action = tools_menu.addAction("&Package Options")
+        package_options_action.triggered.connect(self._open_package_options)
+
+        import_wizard_action = tools_menu.addAction("&Import From Dotfiles")
+        import_wizard_action.triggered.connect(self._open_import_wizard)
         
         tools_menu.addSeparator()
         
@@ -751,7 +777,7 @@ class HyprRiceGUI(QMainWindow):
         self.modern_theme.apply_to_application(QApplication.instance())
         
         # Apply legacy theme manager if needed
-        self.theme_manager.apply_theme(self, theme)
+        self.theme_manager.apply_theme(theme, self.config)
     
     def detect_system_theme(self) -> str:
         """Detect system theme preference."""
@@ -1173,13 +1199,220 @@ class HyprRiceGUI(QMainWindow):
         """Auto-save current configuration."""
         try:
             # Create auto-save backup
-            backup_file = self.backup_manager.create_auto_backup(self.config)
+            backup_file = self.backup_manager.create_backup(self.config, description="Auto-save")
             if backup_file:
                 self.logger.info(f"Auto-saved configuration: {backup_file}")
             
         except Exception as e:
             self.logger.error(f"Error during auto-save: {e}")
     
+    def _open_config_editor(self):
+        """Open the configuration editor."""
+        try:
+            from .gui.config_editor import ConfigEditor
+            editor = ConfigEditor(self)
+            editor.show()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open configuration editor: {e}")
+    
+    def _open_debug_mode(self):
+        """Open debug mode."""
+        try:
+            from .debug import DebugMode
+            from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton, QHBoxLayout
+            
+            # Create debug dialog
+            dialog = QDialog(self)
+            dialog.setWindowTitle("HyprRice Debug Mode")
+            dialog.setMinimumSize(800, 600)
+            
+            layout = QVBoxLayout(dialog)
+            
+            # Debug output
+            debug_output = QTextEdit()
+            debug_output.setReadOnly(True)
+            debug_output.setFont(QFont("JetBrainsMono Nerd Font", 10))
+            layout.addWidget(debug_output)
+            
+            # Buttons
+            button_layout = QHBoxLayout()
+            
+            run_debug_btn = QPushButton("Run Debug Analysis")
+            run_debug_btn.clicked.connect(lambda: self._run_debug_analysis(debug_output))
+            button_layout.addWidget(run_debug_btn)
+            
+            save_report_btn = QPushButton("Save Report")
+            save_report_btn.clicked.connect(lambda: self._save_debug_report(debug_output))
+            button_layout.addWidget(save_report_btn)
+            
+            close_btn = QPushButton("Close")
+            close_btn.clicked.connect(dialog.close)
+            button_layout.addWidget(close_btn)
+            
+            layout.addLayout(button_layout)
+            
+            dialog.show()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open debug mode: {e}")
+    
+    def _run_debug_analysis(self, output_widget):
+        """Run debug analysis and display results."""
+        try:
+            from .debug import DebugMode
+            
+            output_widget.clear()
+            output_widget.append("Running comprehensive debug analysis...\n")
+            output_widget.repaint()
+            
+            # Initialize debug mode
+            if not self.debug_mode:
+                self.debug_mode = DebugMode(self.config)
+            
+            # Run analysis
+            debug_info = self.debug_mode.run_comprehensive_debug()
+            
+            # Generate report
+            report = self.debug_mode.generate_debug_report()
+            
+            # Display results
+            output_widget.clear()
+            output_widget.append(report)
+            
+        except Exception as e:
+            output_widget.append(f"Error during debug analysis: {e}")
+    
+    def _save_debug_report(self, output_widget):
+        """Save debug report to file."""
+        try:
+            from PyQt6.QtWidgets import QFileDialog
+            from datetime import datetime
+            
+            file_path, _ = QFileDialog.getSaveFileName(
+                self, "Save Debug Report",
+                f"hyprrice_debug_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                "Text Files (*.txt);;All Files (*)"
+            )
+            
+            if file_path:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(output_widget.toPlainText())
+                
+                QMessageBox.information(self, "Success", f"Debug report saved to: {file_path}")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save debug report: {e}")
+    
+    def _run_tests(self):
+        """Run comprehensive tests."""
+        try:
+            from .debug import DebugMode
+            from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton, QHBoxLayout
+            
+            # Create test dialog
+            dialog = QDialog(self)
+            dialog.setWindowTitle("HyprRice Test Suite")
+            dialog.setMinimumSize(800, 600)
+            
+            layout = QVBoxLayout(dialog)
+            
+            # Test output
+            test_output = QTextEdit()
+            test_output.setReadOnly(True)
+            test_output.setFont(QFont("JetBrainsMono Nerd Font", 10))
+            layout.addWidget(test_output)
+            
+            # Buttons
+            button_layout = QHBoxLayout()
+            
+            run_tests_btn = QPushButton("Run All Tests")
+            run_tests_btn.clicked.connect(lambda: self._execute_tests(test_output))
+            button_layout.addWidget(run_tests_btn)
+            
+            close_btn = QPushButton("Close")
+            close_btn.clicked.connect(dialog.close)
+            button_layout.addWidget(close_btn)
+            
+            layout.addLayout(button_layout)
+            
+            dialog.show()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open test suite: {e}")
+
+    def _open_package_options(self):
+        """Open the package options dialog."""
+        try:
+            from .gui.package_options import PackageOptionsDialog
+            dialog = PackageOptionsDialog(self)
+            dialog.exec()
+        except Exception as e:
+            self.logger.error(f"Error opening package options: {e}")
+            self.show_error_dialog("Package Options Error", f"Failed to open package options: {e}")
+
+    def _open_import_wizard(self):
+        """Open the import from dotfiles wizard."""
+        try:
+            from .gui.import_wizard import ImportWizard
+            wizard = ImportWizard(self)
+            wizard.exec()
+        except Exception as e:
+            self.logger.error(f"Error opening import wizard: {e}")
+            self.show_error_dialog("Import Wizard Error", f"Failed to open import wizard: {e}")
+    
+    def _execute_tests(self, output_widget):
+        """Execute comprehensive tests."""
+        try:
+            from .debug import DebugMode
+            
+            output_widget.clear()
+            output_widget.append("Running comprehensive test suite...\n")
+            output_widget.repaint()
+            
+            # Initialize debug mode
+            if not self.debug_mode:
+                self.debug_mode = DebugMode(self.config)
+            
+            # Run integration tests
+            test_results = self.debug_mode.run_integration_tests()
+            
+            # Run configuration tests
+            config_tests = self.debug_mode.test_configuration_loading()
+            
+            # Display results
+            output_widget.clear()
+            output_widget.append("=== INTEGRATION TESTS ===\n")
+            
+            for test_name, result in test_results.items():
+                status = "PASSED" if result['passed'] else "FAILED"
+                output_widget.append(f"{test_name}: {status}")
+                if result['error']:
+                    output_widget.append(f"  Error: {result['error']}")
+                output_widget.append("")
+            
+            output_widget.append("=== CONFIGURATION TESTS ===\n")
+            
+            for test_name, result in config_tests.items():
+                status = "PASSED" if result['success'] else "FAILED"
+                output_widget.append(f"{test_name}: {status}")
+                if result['error']:
+                    output_widget.append(f"  Error: {result['error']}")
+                output_widget.append("")
+            
+            # Summary
+            total_tests = len(test_results) + len(config_tests)
+            passed_tests = sum(1 for r in test_results.values() if r['passed']) + \
+                          sum(1 for r in config_tests.values() if r['success'])
+            
+            output_widget.append(f"=== SUMMARY ===\n")
+            output_widget.append(f"Total Tests: {total_tests}")
+            output_widget.append(f"Passed: {passed_tests}")
+            output_widget.append(f"Failed: {total_tests - passed_tests}")
+            output_widget.append(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
+            
+        except Exception as e:
+            output_widget.append(f"Error during test execution: {e}")
+
     def show_about(self):
         """Show about dialog."""
         QMessageBox.about(
@@ -1187,7 +1420,17 @@ class HyprRiceGUI(QMainWindow):
             "About HyprRice",
             "HyprRice - Comprehensive Hyprland Ecosystem Ricing Tool\n\n"
             "Version: 1.0.0\n"
-            "A modern GUI for customizing Hyprland and its ecosystem."
+            "A modern GUI for customizing Hyprland and its ecosystem.\n\n"
+            "Features:\n"
+            "• Modern PyQt6 GUI\n"
+            "• Theme management\n"
+            "• Plugin system\n"
+            "• Backup and restore\n"
+            "• Live preview\n"
+            "• Configuration validation\n"
+            "• Debug mode\n"
+            "• Configuration editor\n\n"
+            "Made with ❤️ for the Hyprland community"
         )
     
     def show_preview(self):
@@ -1310,7 +1553,7 @@ class HyprRiceGUI(QMainWindow):
         try:
             dialog = PluginManagerDialog(self.plugin_manager, self)
             dialog.plugin_status_changed.connect(self.on_plugin_status_changed)
-            dialog.exec_()
+            dialog.exec()
         except Exception as e:
             self.logger.error(f"Error showing plugin manager: {e}")
             self.show_error_dialog("Plugin Manager Error", f"Failed to open plugin manager: {e}")

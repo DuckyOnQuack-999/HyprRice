@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QScrollArea,
     QGroupBox, QGridLayout, QPushButton, QProgressBar, QTextEdit
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, QTime, pyqtSignal
 from PyQt6.QtGui import QColor, QPalette, QFont, QPixmap, QPainter
 
 
@@ -77,9 +77,11 @@ class PreviewWindow(QWidget):
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.update_preview)
         
-        # Auto-refresh settings
+        # Auto-refresh settings with throttling
         self.auto_refresh = True
-        self.refresh_interval = 2000  # 2 seconds
+        self.refresh_interval = 5000  # 5 seconds (reduced frequency)
+        self._last_update_time = 0
+        self._update_throttle_ms = 1000  # Minimum 1 second between updates
         
         self.setup_ui()
         self.start_auto_refresh()
@@ -259,7 +261,7 @@ class PreviewWindow(QWidget):
         # Waybar mockup
         waybar_mockup = QFrame()
         waybar_mockup.setFixedHeight(35)
-        waybar_mockup.setFrameStyle(QFrame.Box)
+        waybar_mockup.setFrameStyle(QFrame.Shape.Box)
         waybar_layout.addWidget(waybar_mockup)
         self.waybar_mockup = waybar_mockup
         
@@ -294,7 +296,16 @@ class PreviewWindow(QWidget):
         self.content_layout.addWidget(system_group)
     
     def update_preview(self):
-        """Update the preview with current configuration."""
+        """Update the preview with current configuration (throttled)."""
+        import time
+        current_time = time.time() * 1000  # Convert to milliseconds
+        
+        # Throttle updates to prevent excessive CPU usage
+        if current_time - self._last_update_time < self._update_throttle_ms:
+            return
+            
+        self._last_update_time = current_time
+        
         try:
             self.status_label.setText("Updating preview...")
             self.progress_bar.setVisible(True)
@@ -313,7 +324,7 @@ class PreviewWindow(QWidget):
             self.update_system_info()
             
             self.progress_bar.setVisible(False)
-            self.status_label.setText(f"Preview updated at {QTimer().currentTime().toString()}")
+            self.status_label.setText(f"Preview updated at {QTime.currentTime().toString()}")
             
         except Exception as e:
             self.progress_bar.setVisible(False)
@@ -593,9 +604,14 @@ class PreviewWindow(QWidget):
         """Check if Hyprland is running."""
         try:
             import subprocess
-            result = subprocess.run(['pgrep', 'Hyprland'], capture_output=True)
+            result = subprocess.run(
+                ['pgrep', 'Hyprland'], 
+                capture_output=True, 
+                text=True, 
+                timeout=2
+            )
             return result.returncode == 0
-        except:
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
             return False
     
     def apply_to_hyprland(self):

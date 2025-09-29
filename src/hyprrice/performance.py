@@ -44,15 +44,22 @@ class FunctionProfile:
 class MemoryTracker:
     """Track memory usage and detect leaks."""
     
-    def __init__(self, threshold_mb: float = 100.0):
+    def __init__(self, threshold_mb: float = 200.0):  # Increased threshold for GUI apps
         self.threshold_mb = threshold_mb
         self.logger = logging.getLogger(__name__)
         self.snapshots = []
+        self._gc_interval = 30  # Run GC every 30 seconds
+        self._last_gc = time.time()
         self.object_refs = weakref.WeakSet()
         self.tracked_objects = defaultdict(int)
         
     def take_snapshot(self) -> PerformanceMetrics:
-        """Take a memory usage snapshot."""
+        """Take a memory usage snapshot with automatic GC."""
+        # Run garbage collection periodically to reduce memory usage
+        current_time = time.time()
+        if current_time - self._last_gc > self._gc_interval:
+            gc.collect()
+            self._last_gc = current_time
         process = psutil.Process()
         
         metrics = PerformanceMetrics(

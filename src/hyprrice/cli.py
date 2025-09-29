@@ -81,6 +81,11 @@ Examples:
         type=str,
         help='Load specific theme on startup'
     )
+    gui_parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Enable debug mode with comprehensive system analysis'
+    )
     
     # Doctor command
     doctor_parser = subparsers.add_parser(
@@ -415,7 +420,7 @@ def cmd_plugins(args: argparse.Namespace) -> int:
             
             available = plugin_manager.list_available_plugins()
             loaded = plugin_manager.list_loaded_plugins()
-            enabled = plugin_manager.list_enabled_plugins()
+            enabled = plugin_manager.list_loaded_plugins()
             
             if not available:
                 print("No plugins found.")

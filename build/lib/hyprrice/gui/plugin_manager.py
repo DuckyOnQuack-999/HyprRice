@@ -253,7 +253,8 @@ class PluginManagerDialog(QDialog):
         layout = QVBoxLayout(self)
         
         # Create splitter for plugin list and details
-        splitter = QSplitter(Qt.Horizontal)
+        from PyQt6.QtCore import Qt
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         
         # Left side: Plugin list
         left_widget = QWidget()
@@ -333,7 +334,7 @@ class PluginManagerDialog(QDialog):
                 display_text += f" [{' '.join(status_indicators)}]"
                 
             item.setText(display_text)
-            item.setData(Qt.UserRole, plugin_info)
+            item.setData(Qt.ItemDataRole.UserRole, plugin_info)
             
             # Color coding
             if plugin_info['loaded']:
@@ -348,7 +349,7 @@ class PluginManagerDialog(QDialog):
     def on_plugin_selected(self, current: QListWidgetItem, previous: QListWidgetItem):
         """Handle plugin selection"""
         if current:
-            plugin_info = current.data(Qt.UserRole)
+            plugin_info = current.data(Qt.ItemDataRole.UserRole)
             self.current_plugin = plugin_info['name']
             self.details_widget.update_plugin_info(plugin_info)
     
@@ -456,7 +457,7 @@ class PluginManagerDialog(QDialog):
         layout.addLayout(button_layout)
         
         # Show dialog
-        if config_dialog.exec_() == QDialog.Accepted:
+        if config_dialog.exec() == QDialog.DialogCode.Accepted:
             new_config = config_widget.get_config()
             self.plugin_manager.configure_plugin(self.current_plugin, new_config)
             QMessageBox.information(self, "Success", f"Configuration saved for '{self.current_plugin}'")
@@ -483,4 +484,4 @@ class PluginManagerDialog(QDialog):
 def show_plugin_manager(plugin_manager: EnhancedPluginManager, parent=None):
     """Show the plugin manager dialog"""
     dialog = PluginManagerDialog(plugin_manager, parent)
-    return dialog.exec_()
+    return dialog.exec()

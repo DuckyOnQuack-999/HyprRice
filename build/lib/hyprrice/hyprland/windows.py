@@ -266,10 +266,15 @@ class WindowManager:
     def get_window_list(self) -> List[Dict[str, Any]]:
         """Get list of current windows with caching."""
         try:
-            result = hyprctl('clients')
-            if result:
-                windows = json.loads(result)
+            returncode, stdout, stderr = hyprctl('clients', json=True)
+            if returncode == 0 and stdout:
+                windows = json.loads(stdout)
                 return windows if isinstance(windows, list) else []
+            else:
+                self.logger.warning(f"Failed to get window list: {stderr}")
+                return []
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Error parsing window list JSON: {e}")
             return []
         except Exception as e:
             self.logger.error(f"Error getting window list: {e}")
@@ -278,10 +283,15 @@ class WindowManager:
     async def get_window_list_async(self) -> List[Dict[str, Any]]:
         """Get list of current windows asynchronously."""
         try:
-            result = await hyprctl_async('clients')
-            if result:
-                windows = json.loads(result)
+            returncode, stdout, stderr = await hyprctl_async('clients', json=True)
+            if returncode == 0 and stdout:
+                windows = json.loads(stdout)
                 return windows if isinstance(windows, list) else []
+            else:
+                self.logger.warning(f"Failed to get window list async: {stderr}")
+                return []
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Error parsing window list JSON async: {e}")
             return []
         except Exception as e:
             self.logger.error(f"Error getting window list async: {e}")

@@ -326,16 +326,33 @@ class HyprlandTab(BaseTab):
                 # Expand tilde if present
                 expanded_path = os.path.expanduser(file_path)
                 
+                # Validate path using security module
+                from ..security import InputValidator
+                validator = InputValidator()
+                
+                try:
+                    canonical_path = validator.validate_path(expanded_path)
+                    expanded_path = str(canonical_path)
+                except Exception as e:
+                    QMessageBox.warning(self, "Security Warning", 
+                                      f"Path is not safe: {expanded_path} - {e}")
+                    return
+                
+                # Check for duplicates
+                if expanded_path in self.config.hyprland.sourced_files:
+                    QMessageBox.warning(self, "Duplicate File", 
+                                      f"File already in sourced files: {expanded_path}")
+                    return
+                
                 # Create file if requested
                 if self.auto_create_checkbox.isChecked():
                     self._create_config_file(expanded_path, self.config_type_combo.currentText(), 
                                            self.include_template_checkbox.isChecked())
                 
                 # Add to sourced files
-                if expanded_path not in self.config.hyprland.sourced_files:
-                    self.config.hyprland.sourced_files.append(expanded_path)
-                    self._populate_sourced_files()
-                    self._on_change()
+                self.config.hyprland.sourced_files.append(expanded_path)
+                self._populate_sourced_files()
+                self._on_change()
     
     def _browse_config_file(self):
         """Browse for a configuration file."""
@@ -512,7 +529,10 @@ plugin {
                     break
             
             if editor:
-                subprocess.Popen([editor, file_path])
+                try:
+                    subprocess.Popen([editor, file_path], timeout=5)
+                except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+                    self.logger.warning(f"Failed to open editor {editor}: {e}")
             else:
                 QMessageBox.information(
                     self, "No Editor Found", 
@@ -554,7 +574,10 @@ plugin {
                 import os
                 
                 folder_path = os.path.dirname(file_path)
-                subprocess.Popen(['xdg-open', folder_path])
+                try:
+                    subprocess.Popen(['xdg-open', folder_path], timeout=5)
+                except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+                    self.logger.warning(f"Failed to open folder: {e}")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to open folder: {e}")
 
@@ -566,13 +589,31 @@ plugin {
         )
         if ok and file_path:
             expanded_path = os.path.expanduser(file_path)
+            
+            # Validate path using security module
+            from ..security import InputValidator
+            validator = InputValidator()
+            
+            try:
+                canonical_path = validator.validate_path(expanded_path)
+                expanded_path = str(canonical_path)
+            except Exception as e:
+                QMessageBox.warning(self, "Security Warning", 
+                                  f"Path is not safe: {expanded_path} - {e}")
+                return
+            
+            # Check for duplicates
+            if expanded_path in self.config.hyprland.sourced_files:
+                QMessageBox.warning(self, "Duplicate File", 
+                                  f"File already in sourced files: {expanded_path}")
+                return
+            
             from ..utils import create_sourced_file
             if create_sourced_file(expanded_path):
-                # Add to sourced files if not already present
-                if expanded_path not in self.config.hyprland.sourced_files:
-                    self.config.hyprland.sourced_files.append(expanded_path)
-                    self._populate_sourced_files()
-                    self._on_change()
+                # Add to sourced files
+                self.config.hyprland.sourced_files.append(expanded_path)
+                self._populate_sourced_files()
+                self._on_change()
                 QMessageBox.information(self, "File Created", f"Created configuration file: {expanded_path}")
             else:
                 QMessageBox.critical(self, "Creation Failed", f"Failed to create file: {expanded_path}")

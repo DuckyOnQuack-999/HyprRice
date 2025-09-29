@@ -9,15 +9,15 @@ Ensure you have these dependencies installed:
 ```bash
 # Arch Linux
 sudo pacman -S hyprland waybar rofi dunst swww grim slurp cliphist hyprlock \
-    python-pyqt5 python-yaml
+    python-pyqt6 python-yaml qt6-wayland
 
 # Ubuntu/Debian
 sudo apt install hyprland waybar rofi dunst swww grim slurp cliphist hyprlock \
-    python3-pyqt5 python3-yaml
+    python3-pyqt6 python3-yaml qt6-wayland
 
 # Fedora
 sudo dnf install hyprland waybar rofi dunst swww grim slurp cliphist hyprlock \
-    python3-qt5 python3-yaml
+    python3-qt6 python3-yaml qt6-qtwayland
 ```
 
 ## Installation
@@ -31,7 +31,7 @@ pip install hyprrice
 
 1. Open a terminal and run:
    ```bash
-   hyprrice
+   hyprrice gui
    ```
 
 2. Choose a base theme:
@@ -45,6 +45,9 @@ pip install hyprrice
    - Basic animations
 
 4. Use live preview to see changes in real-time
+
+5. **New in v1.0**: Access the Configuration Editor from the File menu for manual editing
+6. **New in v1.0**: Use Debug Mode from the Tools menu for system analysis
 
 ## Next Steps
 
@@ -72,6 +75,33 @@ pip install hyprrice
 2. Use Import/Export buttons
 3. Choose format (YAML/JSON)
 4. Select destination
+
+### Manual Configuration Editing (New in v1.0)
+1. Go to File → Configuration Editor
+2. Select the configuration file to edit
+3. Make your changes in the text editor
+4. Save the file
+
+### Debug Mode (New in v1.0)
+1. Go to Tools → Debug Mode
+2. Run comprehensive system analysis
+3. Review the debug report
+4. Save the report for troubleshooting
+
+### Package Options (New in v1.0)
+1. Go to Tools → Package Options
+2. Select your distribution (Arch, Fedora, Ubuntu, etc.)
+3. Choose package type (AUR, RPM, PPA, etc.)
+4. Copy installation script or save to file
+
+### Import From Dotfiles (New in v1.0)
+1. Go to Tools → Import From Dotfiles
+2. Select source (ML4W, end-4, or custom repository)
+3. Review detected configurations
+4. Map configurations to HyprRice themes
+5. Import and apply the configurations
+
+**Note:** Currently supports local directories only. GitHub import coming soon. Templates are examples - customize as needed.
 
 ## Getting Help
 

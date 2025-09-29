@@ -291,7 +291,7 @@ Welcome to the comprehensive documentation for HyprRice - a modern GUI tool for 
 - **Operating System**: Linux with Wayland support
 - **Window Manager**: Hyprland
 - **Python**: 3.8 or higher
-- **Dependencies**: PyQt5/PySide6, PyYAML, psutil
+- **Dependencies**: PyQt6, PyYAML, psutil
 
 ## Support
 

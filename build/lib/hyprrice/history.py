@@ -132,7 +132,14 @@ class HistoryManager:
     """Manages command history for undo/redo functionality."""
     
     def __init__(self, config=None, max_history: int = 50):
-        self.config = config
+        # Handle both Config object and backup_dir string for backward compatibility
+        if isinstance(config, Config):
+            self.config = config
+        elif isinstance(config, str):
+            # If string path provided, create a minimal config-like object
+            self.config = type('Config', (), {'paths': type('Paths', (), {'backup_dir': config})()})()
+        else:
+            self.config = config
         self.max_history = max_history
         self.undo_stack: List[Command] = []
         self.redo_stack: List[Command] = []

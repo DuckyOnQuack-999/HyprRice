@@ -17,6 +17,32 @@ from functools import lru_cache
 from .exceptions import DependencyError
 from .security import sanitize_hyprctl_command
 
+# UI tracing and diagnostics
+def is_ui_tracing_enabled() -> bool:
+    """Check if UI tracing is enabled."""
+    return os.getenv('HYPRRICE_TRACE_UI') == '1'
+
+def trace_ui_event(event_type: str, widget_name: str = "", details: str = ""):
+    """Log UI events when tracing is enabled."""
+    if is_ui_tracing_enabled():
+        logger = logging.getLogger(__name__)
+        logger.debug(f"UI_TRACE: {event_type} | {widget_name} | {details}")
+
+def is_wayland_session() -> bool:
+    """Check if running under Wayland."""
+    return os.getenv('XDG_SESSION_TYPE') == 'wayland' or os.getenv('WAYLAND_DISPLAY') is not None
+
+def get_device_pixel_ratio() -> float:
+    """Get device pixel ratio for high-DPI scaling."""
+    try:
+        from PyQt6.QtWidgets import QApplication
+        app = QApplication.instance()
+        if app:
+            return app.devicePixelRatio()
+    except:
+        pass
+    return 1.0
+
 # Cache for hyprctl results with TTL
 _hyprctl_cache = {}
 _cache_ttl = {}
@@ -195,7 +221,7 @@ def check_dependencies() -> Dict[str, Any]:
     
     # Check Python dependencies
     python_deps = {
-        'PyQt5': 'PyQt5',
+        'PyQt6': 'PyQt6',
         'PyYAML': 'yaml',
         'psutil': 'psutil'
     }

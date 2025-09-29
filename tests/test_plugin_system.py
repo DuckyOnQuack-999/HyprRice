@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock, Mock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from hyprrice.config import Config
-from hyprrice.plugins import PluginManager, Plugin, PluginError
+from hyprrice.plugins import PluginManager, Plugin, PluginError, EnhancedPluginManager
 
 
 class TestPluginManager(unittest.TestCase):
@@ -35,6 +35,22 @@ class TestPluginManager(unittest.TestCase):
         self.assertIsNotNone(self.plugin_manager)
         self.assertEqual(self.plugin_manager.plugins_dir, self.temp_dir)
         self.assertEqual(len(self.plugin_manager._plugins), 0)
+    
+    def test_enhanced_plugin_manager_builtin_imports(self):
+        """Test that builtin plugins can be imported with absolute paths."""
+        # Test that the enhanced plugin manager can load builtin plugins
+        enhanced_manager = EnhancedPluginManager(self.temp_dir)
+        
+        # Test loading builtin plugins
+        try:
+            # This should not raise ImportError with the new absolute imports
+            enhanced_manager._load_plugin_unsafe('notification_theming')
+            self.assertTrue(True)  # If we get here, import worked
+        except ImportError as e:
+            self.fail(f"Builtin plugin import failed: {e}")
+        except Exception:
+            # Other exceptions are OK for this test (plugin might not be fully functional)
+            pass
     
     def test_load_plugins(self):
         """Test loading plugins."""

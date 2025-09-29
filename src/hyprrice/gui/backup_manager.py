@@ -36,7 +36,7 @@ class BackupSelectionDialog(QDialog):
         layout.addWidget(title_label)
         
         # Splitter for list and preview
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         layout.addWidget(splitter)
         
         # Backup list
@@ -117,7 +117,7 @@ class BackupSelectionDialog(QDialog):
             
             # Create list item
             item = QListWidgetItem(display_name)
-            item.setData(Qt.UserRole, backup_path)
+            item.setData(Qt.ItemDataRole.UserRole, backup_path)
             self.backup_list.addItem(item)
         
         # Select first item if available
@@ -133,7 +133,7 @@ class BackupSelectionDialog(QDialog):
             self.preview_text.clear()
             return
         
-        backup_path = current.data(Qt.UserRole)
+        backup_path = current.data(Qt.ItemDataRole.UserRole)
         self.selected_backup = backup_path
         self.restore_button.setEnabled(True)
         

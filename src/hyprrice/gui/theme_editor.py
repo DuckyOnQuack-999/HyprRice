@@ -519,7 +519,7 @@ class ThemeEditorDialog(QDialog):
             close_button.clicked.connect(preview_dialog.accept)
             layout.addWidget(close_button)
             
-            preview_dialog.exec_()
+            preview_dialog.exec()
             
         except Exception as e:
             QMessageBox.warning(self, "Preview Error", f"Failed to generate preview: {str(e)}")

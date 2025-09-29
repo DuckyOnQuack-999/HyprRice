@@ -137,6 +137,17 @@ class PreferencesDialog(QDialog):
         self.widgets['window_height'].setRange(600, 1500)
         window_layout.addRow("Window Height:", self.widgets['window_height'])
         
+        # Wayland-safe rendering mode
+        self.widgets['wayland_safe_mode'] = QCheckBox("Enable Wayland-safe rendering mode")
+        self.widgets['wayland_safe_mode'].setToolTip("Improves compatibility with Wayland compositors")
+        window_layout.addRow(self.widgets['wayland_safe_mode'])
+        
+        # Reset UI button
+        self.reset_ui_button = QPushButton("Reset UI")
+        self.reset_ui_button.setToolTip("Clear all styles and reset UI to default state")
+        self.reset_ui_button.clicked.connect(self.reset_ui)
+        window_layout.addRow("UI Reset:", self.reset_ui_button)
+        
         self.widgets['remember_geometry'] = QCheckBox()
         window_layout.addRow("Remember Window Size:", self.widgets['remember_geometry'])
         
@@ -361,6 +372,7 @@ class PreferencesDialog(QDialog):
                 self.widgets['remember_geometry'].setChecked(getattr(gui_config, 'remember_geometry', True))
                 self.widgets['enable_live_preview'].setChecked(getattr(gui_config, 'enable_live_preview', True))
                 self.widgets['preview_update_delay'].setValue(getattr(gui_config, 'preview_update_delay', 500))
+                self.widgets['wayland_safe_mode'].setChecked(getattr(gui_config, 'wayland_safe_mode', True))
             
             # Paths
             if hasattr(self.config, 'paths'):
@@ -432,6 +444,7 @@ class PreferencesDialog(QDialog):
                 gui_config.remember_geometry = self.widgets['remember_geometry'].isChecked()
                 gui_config.enable_live_preview = self.widgets['enable_live_preview'].isChecked()
                 gui_config.preview_update_delay = self.widgets['preview_update_delay'].value()
+                gui_config.wayland_safe_mode = self.widgets['wayland_safe_mode'].isChecked()
             
             # Paths
             if hasattr(self.config, 'paths'):
@@ -507,6 +520,48 @@ class PreferencesDialog(QDialog):
         
         if directory:
             self.widgets[widget_key].setText(directory)
+    
+    def reset_ui(self):
+        """Reset UI to default state."""
+        from PyQt6.QtWidgets import QApplication, QMessageBox
+        from ..utils import trace_ui_event
+        
+        # Confirm with user
+        reply = QMessageBox.question(
+            self,
+            "Reset UI",
+            "This will clear all custom styles and reset the UI to default state. Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                app = QApplication.instance()
+                if app:
+                    # Clear all stylesheets
+                    app.setUpdatesEnabled(False)
+                    app.style().unpolish(app)
+                    app.setStyleSheet("")
+                    app.style().polish(app)
+                    app.updateGeometry()
+                    app.adjustSize()
+                    app.setUpdatesEnabled(True)
+                    app.repaint()
+                    
+                    trace_ui_event("ui_reset", "PreferencesDialog", "UI reset to default")
+                    
+                    QMessageBox.information(
+                        self,
+                        "UI Reset",
+                        "UI has been reset to default state."
+                    )
+            except Exception as e:
+                QMessageBox.warning(
+                    self,
+                    "Reset Error",
+                    f"Failed to reset UI: {str(e)}"
+                )
     
     def accept(self):
         """Accept dialog and apply preferences."""
