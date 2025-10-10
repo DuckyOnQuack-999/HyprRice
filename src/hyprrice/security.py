@@ -66,6 +66,22 @@ class InputValidator:
         
         return filename
     
+    def is_valid_filename(self, filename: str) -> bool:
+        """
+        Check if filename is valid without raising exceptions.
+        
+        Args:
+            filename: The filename to check
+            
+        Returns:
+            True if filename is valid, False otherwise
+        """
+        try:
+            self.validate_filename(filename)
+            return True
+        except ValidationError:
+            return False
+    
     def validate_path(self, path: Union[str, Path], base_dir: Optional[Path] = None) -> Path:
         """
         Validate file path to prevent path traversal attacks.
@@ -208,6 +224,18 @@ class ConfigSanitizer:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.validator = InputValidator()
+    
+    def sanitize_config(self, data: Any) -> Any:
+        """
+        Sanitize configuration data (alias for sanitize_yaml_data).
+        
+        Args:
+            data: Data to sanitize
+            
+        Returns:
+            Sanitized data
+        """
+        return self.sanitize_yaml_data(data)
     
     def sanitize_yaml_data(self, data: Any) -> Any:
         """

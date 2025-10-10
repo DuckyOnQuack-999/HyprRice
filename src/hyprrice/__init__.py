@@ -13,6 +13,7 @@ __description__ = "Comprehensive Hyprland Ecosystem Ricing Tool"
 from .config import Config
 from .main_gui import HyprRiceGUI
 from .utils import setup_logging, check_dependencies
+from .main import main as main_entry_point
 
 # Create HyprRice as an alias to the main GUI for backward compatibility
 HyprRice = HyprRiceGUI
@@ -23,4 +24,5 @@ __all__ = [
     "HyprRice", 
     "setup_logging",
     "check_dependencies",
+    "main_entry_point",
 ] 

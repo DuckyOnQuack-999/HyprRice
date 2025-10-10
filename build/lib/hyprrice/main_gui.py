@@ -26,6 +26,7 @@ from .gui.tabs import (
     HyprlandTab, WaybarTab, RofiTab, NotificationsTab,
     ClipboardTab, LockscreenTab, ThemesTab, SettingsTab, PluginsTab
 )
+from .gui.modern_navigation import ModernSidebar, ModernContentArea
 from .gui.preview import PreviewWindow
 from .gui.theme_manager import ThemeManager
 from .gui.modern_theme import ModernTheme
@@ -129,10 +130,15 @@ class HyprRiceGUI(QMainWindow):
         # Load default plugins after UI setup
         self.load_default_plugins()
         
-        # Apply modern theme with ultra-modern styling
-        self.modern_theme.set_accent_color("#6366f1")  # Modern indigo accent
-        self.modern_theme.set_theme("dark")  # Force dark theme for sleek look
+        # Apply modern theme with system accent color and auto-detection
+        self.modern_theme.set_theme("auto")  # Auto-detect system theme
         self.modern_theme.apply_to_application(QApplication.instance())
+        
+        # Apply Wayland-safe mode if enabled
+        if getattr(self.config.gui, 'wayland_safe_mode', True):
+            from .utils import is_wayland_session, trace_ui_event
+            if is_wayland_session():
+                trace_ui_event("wayland_mode", "HyprRiceGUI", "Wayland-safe mode enabled")
         
         # Start performance monitoring (if enabled)
         from .performance import _auto_monitoring_enabled
@@ -476,7 +482,7 @@ class HyprRiceGUI(QMainWindow):
         return wrapper
 
     def setup_ui(self):
-        """Setup the main user interface."""
+        """Setup the main user interface with modern navigation."""
         self.setWindowTitle("HyprRice - Hyprland Configuration Tool")
         self.setGeometry(100, 100, self.config.gui.window_width, self.config.gui.window_height)
         
@@ -484,154 +490,62 @@ class HyprRiceGUI(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
-        # Main layout
+        # Main layout with modern sidebar
         main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # Create splitter for sidebar and main content
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        main_layout.addWidget(splitter)
+        # Create modern sidebar
+        self.sidebar = ModernSidebar()
+        self.sidebar.section_changed.connect(self.on_section_changed)
+        main_layout.addWidget(self.sidebar)
         
-        # Sidebar
-        self.setup_sidebar(splitter)
+        # Create modern content area
+        self.content_area = ModernContentArea()
+        main_layout.addWidget(self.content_area)
         
-        # Main content area
-        self.setup_main_content(splitter)
-        
-        # Set splitter proportions
-        splitter.setSizes([200, 800])
+        # Setup content widgets
+        self.setup_content_widgets()
     
-    def setup_sidebar(self, parent):
-        """Setup the sidebar with navigation."""
-        sidebar = QFrame()
-        sidebar.setFrameStyle(QFrame.Shape.StyledPanel)
-        sidebar.setMaximumWidth(250)
-        sidebar.setMinimumWidth(150)
-        
-        layout = QVBoxLayout(sidebar)
-        
-        # Title
-        title = QLabel("HyprRice")
-        title.setFont(QFont("Arial", 16, QFont.Weight.Bold))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
-        
-        # Navigation tree
-        self.nav_tree = QTreeWidget()
-        self.nav_tree.setHeaderHidden(True)
-        self.nav_tree.itemClicked.connect(self.on_nav_item_clicked)
-        layout.addWidget(self.nav_tree)
-        
-        # Setup navigation items
-        self.setup_navigation()
-        
-        parent.addWidget(sidebar)
-    
-    def setup_navigation(self):
-        """Setup navigation tree items."""
-        # Main categories
-        hyprland_item = QTreeWidgetItem(self.nav_tree, ["Hyprland"])
-        hyprland_item.setIcon(0, QIcon(":/icons/hyprland.png"))
-        
-        waybar_item = QTreeWidgetItem(self.nav_tree, ["Waybar"])
-        waybar_item.setIcon(0, QIcon(":/icons/waybar.png"))
-        
-        rofi_item = QTreeWidgetItem(self.nav_tree, ["Rofi"])
-        rofi_item.setIcon(0, QIcon(":/icons/rofi.png"))
-        
-        notifications_item = QTreeWidgetItem(self.nav_tree, ["Notifications"])
-        notifications_item.setIcon(0, QIcon(":/icons/notifications.png"))
-        
-        clipboard_item = QTreeWidgetItem(self.nav_tree, ["Clipboard"])
-        clipboard_item.setIcon(0, QIcon(":/icons/clipboard.png"))
-        
-        lockscreen_item = QTreeWidgetItem(self.nav_tree, ["Lockscreen"])
-        lockscreen_item.setIcon(0, QIcon(":/icons/lockscreen.png"))
-        
-        themes_item = QTreeWidgetItem(self.nav_tree, ["Themes"])
-        themes_item.setIcon(0, QIcon(":/icons/themes.png"))
-        
-        settings_item = QTreeWidgetItem(self.nav_tree, ["Settings"])
-        settings_item.setIcon(0, QIcon(":/icons/settings.png"))
-        
-        plugins_item = QTreeWidgetItem(self.nav_tree, ["Plugins"])
-        plugins_item.setIcon(0, QIcon(":/icons/plugins.png"))
-        
-        self.nav_tree.expandAll()
-    
-    def setup_main_content(self, parent):
-        """Setup the main content area with tabs."""
-        content_widget = QWidget()
-        layout = QVBoxLayout(content_widget)
-        
-        # Tab widget
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setTabsClosable(False)
-        layout.addWidget(self.tab_widget)
-        
-        # Create tabs
-        self.create_tabs()
-        
-        # Add a button to show the preview window
-        preview_btn = QPushButton("Show Live Preview")
-        preview_btn.setToolTip("Open a live preview of your current theme and settings.")
-        preview_btn.clicked.connect(self.show_preview)
-        layout.addWidget(preview_btn)
-        
-        parent.addWidget(content_widget)
-    
-    def create_tabs(self):
-        """Create all application tabs."""
-        # Hyprland tab
+    def setup_content_widgets(self):
+        """Setup content widgets for each section."""
+        # Create all tab widgets
         self.hyprland_tab = HyprlandTab(self.config, self.preview_window)
-        self.tab_widget.addTab(self.hyprland_tab, "Hyprland")
-        
-        # Waybar tab
         self.waybar_tab = WaybarTab(self.config, self.preview_window)
-        self.tab_widget.addTab(self.waybar_tab, "Waybar")
-        
-        # Rofi tab
         self.rofi_tab = RofiTab(self.config, self.preview_window)
-        self.tab_widget.addTab(self.rofi_tab, "Rofi")
-        
-        # Notifications tab
         self.notifications_tab = NotificationsTab(self.config, self.preview_window)
-        self.tab_widget.addTab(self.notifications_tab, "Notifications")
-        
-        # Clipboard tab
         self.clipboard_tab = ClipboardTab(self.config, self.preview_window)
-        self.tab_widget.addTab(self.clipboard_tab, "Clipboard")
-        
-        # Lockscreen tab
         self.lockscreen_tab = LockscreenTab(self.config, self.preview_window)
-        self.tab_widget.addTab(self.lockscreen_tab, "Lockscreen")
-        
-        # Themes tab
         self.themes_tab = ThemesTab(self.config, self.theme_manager, self.preview_window)
-        self.tab_widget.addTab(self.themes_tab, "Themes")
-        
-        # Settings tab
         self.settings_tab = SettingsTab(self.config, self.preview_window)
-        self.tab_widget.addTab(self.settings_tab, "Settings")
-        
-        # Plugins tab
         self.plugins_tab = PluginsTab(self.config, self.plugin_manager, self)
-        self.tab_widget.addTab(self.plugins_tab, "Plugins")
+        
+        # Add widgets to content area
+        self.content_area.add_content_widget("Hyprland", self.hyprland_tab)
+        self.content_area.add_content_widget("Waybar", self.waybar_tab)
+        self.content_area.add_content_widget("Rofi", self.rofi_tab)
+        self.content_area.add_content_widget("Notifications", self.notifications_tab)
+        self.content_area.add_content_widget("Clipboard", self.clipboard_tab)
+        self.content_area.add_content_widget("Lockscreen", self.lockscreen_tab)
+        self.content_area.add_content_widget("Themes", self.themes_tab)
+        self.content_area.add_content_widget("Settings", self.settings_tab)
+        self.content_area.add_content_widget("Plugins", self.plugins_tab)
         
         # Connect signals
         for tab in [self.hyprland_tab, self.waybar_tab, self.rofi_tab,
                    self.notifications_tab, self.clipboard_tab, self.lockscreen_tab]:
             tab.config_changed.connect(self.on_config_changed)
         
-        # Add tooltips to tabs
-        self.tab_widget.setTabToolTip(0, "Configure Hyprland core settings.")
-        self.tab_widget.setTabToolTip(1, "Configure Waybar settings.")
-        self.tab_widget.setTabToolTip(2, "Configure Rofi settings.")
-        self.tab_widget.setTabToolTip(3, "Configure notification daemon settings.")
-        self.tab_widget.setTabToolTip(4, "Configure clipboard manager settings.")
-        self.tab_widget.setTabToolTip(5, "Configure lockscreen settings.")
-        self.tab_widget.setTabToolTip(6, "Manage and preview themes.")
-        self.tab_widget.setTabToolTip(7, "General settings, backup, restore, undo, redo.")
-        self.tab_widget.setTabToolTip(8, "Manage and load plugins.")
+        # Show initial section
+        self.content_area.show_section("Hyprland")
+    
+    def on_section_changed(self, section_name: str):
+        """Handle section change from sidebar."""
+        self.content_area.show_section(section_name)
+    
+    
+    
+    
     
     def setup_menu(self):
         """Setup the application menu bar."""
@@ -770,40 +684,15 @@ class HyprRiceGUI(QMainWindow):
         
         if theme == "auto":
             # Auto-detect theme based on system
-            theme = self.detect_system_theme()
+            theme = self.modern_theme._detect_system_theme()
         
-        # Apply modern theme
+        # Apply modern theme with system accent color
         self.modern_theme.set_theme(theme)
         self.modern_theme.apply_to_application(QApplication.instance())
         
         # Apply legacy theme manager if needed
         self.theme_manager.apply_theme(theme, self.config)
     
-    def detect_system_theme(self) -> str:
-        """Detect system theme preference."""
-        # This is a simplified implementation
-        # In a real application, you'd check various system settings
-        return "dark"  # Default to dark theme
-    
-    def on_nav_item_clicked(self, item: QTreeWidgetItem, column: int):
-        """Handle navigation item clicks."""
-        item_text = item.text(0)
-        
-        # Map navigation items to tabs
-        tab_mapping = {
-            "Hyprland": 0,
-            "Waybar": 1,
-            "Rofi": 2,
-            "Notifications": 3,
-            "Clipboard": 4,
-            "Lockscreen": 5,
-            "Themes": 6,
-            "Settings": 7,
-            "Plugins": 8,
-        }
-        
-        if item_text in tab_mapping:
-            self.tab_widget.setCurrentIndex(tab_mapping[item_text])
     
     def on_config_changed(self):
         """Handle configuration changes."""
@@ -1445,6 +1334,8 @@ class HyprRiceGUI(QMainWindow):
     def set_theme(self, theme: str):
         """Set application theme."""
         self.config.gui.theme = theme
+        self.modern_theme.set_theme(theme)
+        self.modern_theme.apply_to_application(QApplication.instance())
         self.apply_theme()
     
     def closeEvent(self, event):

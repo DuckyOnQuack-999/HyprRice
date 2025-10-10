@@ -13,8 +13,8 @@ from ..utils import hyprctl, parse_hyprland_config, write_hyprland_config
 class AnimationManager:
     """Manages Hyprland animations and effects."""
     
-    def __init__(self, config_path: str):
-        self.config_path = config_path
+    def __init__(self, config_path: str = None):
+        self.config_path = config_path if config_path else str(Path.home() / ".config" / "hypr" / "hyprland.conf")
         self.logger = logging.getLogger(__name__)
         self.presets_dir = Path.home() / ".hyprrice" / "animation_presets"
         self.presets_dir.mkdir(parents=True, exist_ok=True)

@@ -1,1 +1,122 @@
- 
+# HyprRice Default Configuration
+# This file contains the default configuration for HyprRice
+# It will be used when no user configuration exists
+
+general:
+  auto_backup: true
+  backup_retention: 10
+  live_preview: true
+  theme: auto
+  language: en
+
+paths:
+  hyprland_config: ~/.config/hypr/hyprland.conf
+  waybar_config: ~/.config/waybar/
+  rofi_config: ~/.config/rofi/
+  dunst_config: ~/.config/dunst/
+  mako_config: ~/.config/mako/
+  backup_dir: ~/.hyprrice/backups/
+  log_dir: ~/.hyprrice/logs/
+  theme_dir: ~/.hyprrice/themes/
+
+gui:
+  theme: dark
+  window_width: 1200
+  window_height: 800
+  show_tooltips: true
+  show_status_bar: true
+  auto_save: true
+  auto_save_interval: 30
+
+hyprland:
+  animations_enabled: true
+  animation_duration: 0.5
+  animation_curve: ease-out
+  window_opacity: 1.0
+  border_size: 1
+  border_color: "#ffffff"
+  gaps_in: 5
+  gaps_out: 10
+  smart_gaps: true
+  smart_borders: true
+  blur_enabled: true
+  blur_size: 8
+  blur_passes: 1
+  sourced_files:
+    - ~/.config/hypr/rules.conf
+    - ~/.config/hypr/workspace.conf
+    - ~/.config/hypr/exec.conf
+
+waybar:
+  position: top
+  height: 30
+  background_color: "rgba(43, 48, 59, 0.5)"
+  border_color: "rgba(100, 115, 245, 0.5)"
+  text_color: "#ffffff"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 13
+  modules:
+    - clock
+    - battery
+    - network
+    - cpu
+    - memory
+    - tray
+
+rofi:
+  theme: default
+  width: 40
+  location: center
+  anchor: center
+  background_color: "#2e3440"
+  text_color: "#eceff4"
+  border_color: "#5e81ac"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 14
+
+notifications:
+  daemon: dunst
+  position: top-right
+  timeout: 5000
+  background_color: "#2e3440"
+  text_color: "#eceff4"
+  border_color: "#5e81ac"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 12
+
+clipboard:
+  manager: cliphist
+  history_size: 100
+  auto_sync: true
+  sync_interval: 30
+  include_images: true
+  include_text: true
+  include_files: true
+  exclude_patterns:
+    - password
+    - secret
+    - token
+    - key
+  max_item_size: 1048576
+
+lockscreen:
+  daemon: hyprlock
+  background: ~/.config/hyprlock/background.jpg
+  timeout: 300
+  grace_period: 5
+  fade_in: true
+  fade_out: true
+  fade_time: 0.5
+  show_clock: true
+  clock_format: "%H:%M:%S"
+  show_date: true
+  date_format: "%Y-%m-%d"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 24
+  text_color: "#ffffff"
+  background_color: "#000000"
+  border_color: "#5e81ac"
+  border_size: 2
+  blur_background: true
+  blur_size: 8
+  animation_duration: 0.3

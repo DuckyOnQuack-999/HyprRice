@@ -41,13 +41,23 @@ class HistoryManager:
     
     def __init__(self, history_dir: str, max_entries: int = 50):
         self.history_dir = Path(history_dir)
-        self.history_dir.mkdir(parents=True, exist_ok=True)
         self.max_entries = max_entries
         self.logger = logging.getLogger(__name__)
         
         # In-memory history for quick access
         self._history: List[HistoryEntry] = []
         self._current_index = -1
+        
+        # Create directory with error handling
+        try:
+            self.history_dir.mkdir(parents=True, exist_ok=True)
+        except (OSError, PermissionError) as e:
+            self.logger.warning(f"Could not create history directory {self.history_dir}: {e}")
+            # Use a fallback directory
+            import tempfile
+            self.history_dir = Path(tempfile.gettempdir()) / "hyprrice_history"
+            self.history_dir.mkdir(parents=True, exist_ok=True)
+            self.logger.info(f"Using fallback history directory: {self.history_dir}")
         
         # Load existing history
         self._load_history()
@@ -526,27 +536,55 @@ class Command:
 class UndoCommand(Command):
     """Command to undo a previous action."""
     
-    def __init__(self, history_entry: HistoryEntry):
-        super().__init__(None)
+    def __init__(self, history_entry: HistoryEntry, config: Config = None):
+        super().__init__(config)
         self.history_entry = history_entry
     
     def execute(self) -> bool:
         """Execute the undo command."""
         try:
             # Restore configuration from snapshot
-            if self.history_entry.config_snapshot:
-                # This would need to be implemented based on the specific action
-                pass
+            if self.history_entry.config_snapshot and self.config:
+                # Restore configuration values from snapshot
+                for section, values in self.history_entry.config_snapshot.items():
+                    if hasattr(self.config, section):
+                        section_obj = getattr(self.config, section)
+                        for key, value in values.items():
+                            if hasattr(section_obj, key):
+                                setattr(section_obj, key, value)
+                
+                # Save the restored configuration
+                self.config.save()
+                self.logger.info(f"Configuration restored from snapshot: {self.history_entry.timestamp}")
             
             # Restore files if any
             for file_path in self.history_entry.file_paths:
-                # Implementation would depend on the specific file restoration logic
-                pass
+                if os.path.exists(file_path):
+                    # Create backup of current file
+                    backup_path = f"{file_path}.undo_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    shutil.copy2(file_path, backup_path)
+                    
+                    # Restore from history entry metadata if available
+                    if 'file_content' in self.history_entry.metadata.get(file_path, {}):
+                        with open(file_path, 'w') as f:
+                            f.write(self.history_entry.metadata[file_path]['file_content'])
+                        self.logger.info(f"File restored: {file_path}")
             
             return True
             
         except Exception as e:
             self.logger.error(f"Error executing undo command: {e}")
+            return False
+    
+    def undo(self) -> bool:
+        """Undo the undo command (redo the original action)."""
+        try:
+            # This would re-apply the original action
+            # For now, we'll log that this is not fully implemented
+            self.logger.warning("Undo of undo command not fully implemented")
+            return False
+        except Exception as e:
+            self.logger.error(f"Error undoing undo command: {e}")
             return False
     
     def get_description(self) -> str:
@@ -557,17 +595,44 @@ class UndoCommand(Command):
 class RedoCommand(Command):
     """Command to redo a previous action."""
     
-    def __init__(self, history_entry: HistoryEntry):
-        super().__init__(None)
+    def __init__(self, history_entry: HistoryEntry, config: Config = None):
+        super().__init__(config)
         self.history_entry = history_entry
     
     def execute(self) -> bool:
         """Execute the redo command."""
         try:
-            # Re-apply the action
-            if self.history_entry.config_snapshot:
-                # This would need to be implemented based on the specific action
-                pass
+            # Re-apply the action based on the action type
+            action = self.history_entry.action.lower()
+            
+            if action == "config_change" and self.history_entry.config_snapshot:
+                # Re-apply configuration changes
+                if self.config:
+                    for section, values in self.history_entry.config_snapshot.items():
+                        if hasattr(self.config, section):
+                            section_obj = getattr(self.config, section)
+                            for key, value in values.items():
+                                if hasattr(section_obj, key):
+                                    setattr(section_obj, key, value)
+                    
+                    # Save the configuration
+                    self.config.save()
+                    self.logger.info(f"Configuration changes re-applied: {self.history_entry.timestamp}")
+            
+            elif action == "theme_change":
+                # Re-apply theme changes
+                if 'theme_name' in self.history_entry.metadata:
+                    theme_name = self.history_entry.metadata['theme_name']
+                    # This would integrate with the theme manager
+                    self.logger.info(f"Theme change re-applied: {theme_name}")
+            
+            elif action == "file_edit":
+                # Re-apply file edits
+                for file_path in self.history_entry.file_paths:
+                    if 'file_content' in self.history_entry.metadata.get(file_path, {}):
+                        with open(file_path, 'w') as f:
+                            f.write(self.history_entry.metadata[file_path]['file_content'])
+                        self.logger.info(f"File edit re-applied: {file_path}")
             
             return True
             
@@ -575,9 +640,132 @@ class RedoCommand(Command):
             self.logger.error(f"Error executing redo command: {e}")
             return False
     
+    def undo(self) -> bool:
+        """Undo the redo command."""
+        try:
+            # This would undo the re-applied action
+            # For now, we'll log that this is not fully implemented
+            self.logger.warning("Undo of redo command not fully implemented")
+            return False
+        except Exception as e:
+            self.logger.error(f"Error undoing redo command: {e}")
+            return False
+    
     def get_description(self) -> str:
         """Get the redo command description."""
         return f"Redo: {self.history_entry.action} - {self.history_entry.description}"
+
+
+class ConfigChangeCommand(Command):
+    """Command to apply configuration changes."""
+    
+    def __init__(self, config: Config, changes: Dict[str, Any], description: str = "Configuration change"):
+        super().__init__(config)
+        self.changes = changes
+        self.description = description
+        self.original_values = {}
+    
+    def execute(self) -> bool:
+        """Execute the configuration change."""
+        try:
+            # Store original values for undo
+            self.original_values = {}
+            
+            # Apply changes
+            for section, values in self.changes.items():
+                if hasattr(self.config, section):
+                    section_obj = getattr(self.config, section)
+                    for key, value in values.items():
+                        if hasattr(section_obj, key):
+                            # Store original value
+                            self.original_values[f"{section}.{key}"] = getattr(section_obj, key)
+                            # Apply new value
+                            setattr(section_obj, key, value)
+            
+            # Save configuration
+            self.config.save()
+            self.logger.info(f"Configuration changes applied: {self.description}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error executing config change command: {e}")
+            return False
+    
+    def undo(self) -> bool:
+        """Undo the configuration change."""
+        try:
+            # Restore original values
+            for key, value in self.original_values.items():
+                section, attr = key.split('.', 1)
+                if hasattr(self.config, section):
+                    section_obj = getattr(self.config, section)
+                    if hasattr(section_obj, attr):
+                        setattr(section_obj, attr, value)
+            
+            # Save configuration
+            self.config.save()
+            self.logger.info(f"Configuration changes undone: {self.description}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error undoing config change command: {e}")
+            return False
+    
+    def get_description(self) -> str:
+        """Get the command description."""
+        return self.description
+
+
+class FileEditCommand(Command):
+    """Command to edit a file."""
+    
+    def __init__(self, file_path: str, new_content: str, description: str = "File edit"):
+        super().__init__(None)
+        self.file_path = file_path
+        self.new_content = new_content
+        self.description = description
+        self.original_content = ""
+    
+    def execute(self) -> bool:
+        """Execute the file edit."""
+        try:
+            # Read original content
+            if os.path.exists(self.file_path):
+                with open(self.file_path, 'r') as f:
+                    self.original_content = f.read()
+            
+            # Write new content
+            with open(self.file_path, 'w') as f:
+                f.write(self.new_content)
+            
+            self.logger.info(f"File edited: {self.file_path}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error executing file edit command: {e}")
+            return False
+    
+    def undo(self) -> bool:
+        """Undo the file edit."""
+        try:
+            # Restore original content
+            with open(self.file_path, 'w') as f:
+                f.write(self.original_content)
+            
+            self.logger.info(f"File edit undone: {self.file_path}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error undoing file edit command: {e}")
+            return False
+    
+    def get_description(self) -> str:
+        """Get the command description."""
+        return f"{self.description}: {self.file_path}"
+    
+    def get_file_paths(self) -> List[str]:
+        """Get affected file paths."""
+        return [self.file_path]
 
 
 

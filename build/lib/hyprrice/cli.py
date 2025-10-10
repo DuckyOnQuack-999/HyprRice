@@ -43,6 +43,11 @@ Examples:
   hyprrice plugins list           # List available plugins
   hyprrice migrate                # Migrate configuration
   hyprrice check                  # Check dependencies
+  hyprrice autoconfig             # Run intelligent autoconfiguration
+  hyprrice autoconfig --profile visual  # Apply visual profile
+  hyprrice plugins list           # List available plugins
+  hyprrice plugins enable hyprbars  # Enable Hyprbars plugin
+  hyprrice plugins generate --reload  # Generate modular configs and reload
         """
     )
     
@@ -187,6 +192,37 @@ Examples:
         help='Name of plugin to disable'
     )
     
+    # Autoconfig command
+    autoconfig_parser = subparsers.add_parser(
+        'autoconfig',
+        help='Run intelligent autoconfiguration'
+    )
+    autoconfig_parser.add_argument(
+        '--profile',
+        type=str,
+        choices=['performance', 'visual', 'battery', 'minimal'],
+        default='performance',
+        help='Performance profile to apply (default: performance)'
+    )
+    autoconfig_parser.add_argument(
+        '--interactive',
+        action='store_true',
+        help='Run in interactive mode'
+    )
+    autoconfig_parser.add_argument(
+        '--no-backup',
+        action='store_true',
+        help='Skip creating backup before autoconfig'
+    )
+    autoconfig_parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Output results in JSON format'
+    )
+    
+    # Plugins command
+    build_plugin_parser(subparsers)
+    
     return parser
 
 
@@ -328,8 +364,76 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             print(f"\n⚠️  Found {critical_issues} issue(s). See above for details.")
             if args.fix:
                 print("🔧 Attempting to fix issues...")
-                # TODO: Implement auto-fix logic
-                print("   Auto-fix not yet implemented")
+                fixed_issues = 0
+                
+                # Fix missing dependencies
+                for dep, status in results.items():
+                    if not status['available'] and status.get('required', False):
+                        if 'install_command' in status:
+                            install_cmd = status['install_command'].split('\n')[0]  # Get first install command
+                            print(f"   Installing {dep}...")
+                            try:
+                                import subprocess
+                                # Extract the actual command (remove comments)
+                                if 'sudo pacman -S' in install_cmd:
+                                    cmd = ['sudo', 'pacman', '-S', '--noconfirm', dep]
+                                elif 'sudo apt install' in install_cmd:
+                                    cmd = ['sudo', 'apt', 'install', '-y', dep]
+                                elif 'sudo dnf install' in install_cmd:
+                                    cmd = ['sudo', 'dnf', 'install', '-y', dep]
+                                else:
+                                    print(f"   Cannot auto-install {dep}: {install_cmd}")
+                                    continue
+                                
+                                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                                if result.returncode == 0:
+                                    print(f"   ✅ Successfully installed {dep}")
+                                    fixed_issues += 1
+                                else:
+                                    print(f"   ❌ Failed to install {dep}: {result.stderr}")
+                            except Exception as e:
+                                print(f"   ❌ Error installing {dep}: {e}")
+                
+                # Fix configuration issues
+                config_path = Path.home() / '.config' / 'hyprrice' / 'config.yaml'
+                if not config_path.exists():
+                    print("   Creating default configuration...")
+                    try:
+                        from .config import Config
+                        config = Config()
+                        config.save()
+                        print("   ✅ Default configuration created")
+                        fixed_issues += 1
+                    except Exception as e:
+                        print(f"   ❌ Failed to create configuration: {e}")
+                
+                # Fix plugin directory
+                plugins_dir = Path.home() / '.hyprrice' / 'plugins'
+                if not plugins_dir.exists():
+                    print("   Creating plugins directory...")
+                    try:
+                        plugins_dir.mkdir(parents=True, exist_ok=True)
+                        print("   ✅ Plugins directory created")
+                        fixed_issues += 1
+                    except Exception as e:
+                        print(f"   ❌ Failed to create plugins directory: {e}")
+                
+                # Fix backup directory
+                backup_dir = Path.home() / '.hyprrice' / 'backups'
+                if not backup_dir.exists():
+                    print("   Creating backup directory...")
+                    try:
+                        backup_dir.mkdir(parents=True, exist_ok=True)
+                        print("   ✅ Backup directory created")
+                        fixed_issues += 1
+                    except Exception as e:
+                        print(f"   ❌ Failed to create backup directory: {e}")
+                
+                if fixed_issues > 0:
+                    print(f"   🎉 Fixed {fixed_issues} issue(s)!")
+                    print("   Run 'hyprrice doctor' again to verify fixes.")
+                else:
+                    print("   ℹ️  No issues could be automatically fixed.")
             return 1
             
     except Exception as e:
@@ -500,6 +604,72 @@ def cmd_plugins(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_autoconfig(args: argparse.Namespace) -> int:
+    """Run intelligent autoconfiguration."""
+    try:
+        from .autoconfig import run_autoconfig
+from .cli_plugins import cmd_plugins, build_plugin_parser
+        
+        print("🔧 HyprRice Autoconfiguration")
+        print("=" * 40)
+        
+        # Run autoconfig
+        result = run_autoconfig(
+            profile=args.profile,
+            interactive=args.interactive,
+            backup=not args.no_backup
+        )
+        
+        if args.json:
+            # Output JSON result
+            import json
+            from dataclasses import asdict
+            
+            # Convert result to dict and handle enums
+            result_dict = asdict(result)
+            if result_dict.get('profile_applied'):
+                result_dict['profile_applied'] = result_dict['profile_applied'].value
+            
+            print(json.dumps(result_dict, indent=2))
+            return 0 if result.success else 1
+        
+        # Output human-readable result
+        if result.success:
+            print("✅ Autoconfiguration completed successfully!")
+            print(f"📊 Profile applied: {result.profile_applied.value}")
+            print(f"⚡ Performance impact: {result.performance_impact}")
+            
+            if result.optimizations_applied:
+                print("\n🔧 Optimizations applied:")
+                for opt in result.optimizations_applied:
+                    print(f"  • {opt}")
+            
+            if result.recommendations:
+                print("\n💡 Recommendations:")
+                for rec in result.recommendations:
+                    print(f"  • {rec}")
+            
+            if result.backup_created:
+                print(f"\n💾 Backup created: {result.backup_path}")
+            
+            print("\n🎉 Your HyprRice configuration has been optimized!")
+            return 0
+        else:
+            print("❌ Autoconfiguration failed!")
+            if result.warnings:
+                print("\n⚠️  Warnings:")
+                for warning in result.warnings:
+                    print(f"  • {warning}")
+            return 1
+            
+    except ImportError as e:
+        print(f"Error: Could not import autoconfig module: {e}")
+        return 1
+    except Exception as e:
+        print(f"Error during autoconfiguration: {e}")
+        return 1
+
+
 def dispatch(args: argparse.Namespace) -> int:
     """Dispatch command to appropriate handler."""
     if not args.command:
@@ -517,6 +687,7 @@ def dispatch(args: argparse.Namespace) -> int:
         'check': cmd_check,
         'migrate': cmd_migrate,
         'plugins': cmd_plugins,
+        'autoconfig': cmd_autoconfig,
     }
     
     handler = command_map.get(args.command)

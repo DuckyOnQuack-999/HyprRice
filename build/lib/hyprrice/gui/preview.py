@@ -23,6 +23,7 @@ class ColorPreview(QFrame):
         self.setFixedSize(80, 60)
         self.setFrameStyle(QFrame.Shape.Box)
         self.setLineWidth(1)
+        self.setAutoFillBackground(True)
         self.update_color()
     
     def set_color(self, color: str):
@@ -57,6 +58,14 @@ class PreviewWindow(QWidget):
         self.config = config
         self.logger = logging.getLogger(__name__)
         
+        # Ensure proper background painting and mouse events
+        self.setAutoFillBackground(True)
+        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
+        
+        # Import UI tracing utilities
+        from ..utils import trace_ui_event
+        self.trace_ui_event = trace_ui_event
+        
         # Import managers
         from ..hyprland.windows import WindowManager
         from ..hyprland.display import DisplayManager
@@ -77,11 +86,15 @@ class PreviewWindow(QWidget):
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.update_preview)
         
-        # Auto-refresh settings with throttling
+        # Auto-refresh settings with throttling and debouncing
         self.auto_refresh = True
         self.refresh_interval = 5000  # 5 seconds (reduced frequency)
         self._last_update_time = 0
-        self._update_throttle_ms = 1000  # Minimum 1 second between updates
+        self._update_throttle_ms = 250  # Minimum 250ms between updates (debounced)
+        self._debounce_timer = QTimer()
+        self._debounce_timer.setSingleShot(True)
+        self._debounce_timer.timeout.connect(self._perform_update)
+        self._pending_update = False
         
         self.setup_ui()
         self.start_auto_refresh()
@@ -126,6 +139,11 @@ class PreviewWindow(QWidget):
         scroll_area = QScrollArea()
         scroll_widget = QWidget()
         self.content_layout = QVBoxLayout(scroll_widget)
+        
+        # Ensure scroll area content is properly painted
+        scroll_widget.setAutoFillBackground(True)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(scroll_widget)
         
         # Create preview sections
         self.create_theme_preview()
@@ -227,6 +245,20 @@ class PreviewWindow(QWidget):
         self.preview_rounding_label = QLabel("Rounding: Loading...")
         preview_layout.addWidget(self.preview_rounding_label, 5, 0, 1, 2)
         
+        # Shadow
+        self.current_shadow_label = QLabel("Shadow: Loading...")
+        current_layout.addWidget(self.current_shadow_label, 6, 0, 1, 2)
+        
+        self.preview_shadow_label = QLabel("Shadow: Loading...")
+        preview_layout.addWidget(self.preview_shadow_label, 6, 0, 1, 2)
+        
+        # Window Rules
+        self.current_rules_label = QLabel("Window Rules: Loading...")
+        current_layout.addWidget(self.current_rules_label, 7, 0, 1, 2)
+        
+        self.preview_rules_label = QLabel("Window Rules: Loading...")
+        preview_layout.addWidget(self.preview_rules_label, 7, 0, 1, 2)
+        
         comparison_layout.addWidget(current_group)
         comparison_layout.addWidget(preview_group)
         hyprland_layout.addLayout(comparison_layout)
@@ -296,7 +328,18 @@ class PreviewWindow(QWidget):
         self.content_layout.addWidget(system_group)
     
     def update_preview(self):
-        """Update the preview with current configuration (throttled)."""
+        """Update the preview with current configuration (debounced)."""
+        # Cancel any pending update and start debounce timer
+        self._debounce_timer.stop()
+        self._debounce_timer.start(250)  # 250ms debounce
+        self._pending_update = True
+    
+    def _perform_update(self):
+        """Perform the actual preview update (called after debounce)."""
+        if not self._pending_update:
+            return
+            
+        self._pending_update = False
         import time
         current_time = time.time() * 1000  # Convert to milliseconds
         
@@ -307,6 +350,7 @@ class PreviewWindow(QWidget):
         self._last_update_time = current_time
         
         try:
+            self.trace_ui_event("preview_update", "PreviewWindow", "starting update")
             self.status_label.setText("Updating preview...")
             self.progress_bar.setVisible(True)
             self.progress_bar.setRange(0, 0)  # Indeterminate
@@ -325,24 +369,33 @@ class PreviewWindow(QWidget):
             
             self.progress_bar.setVisible(False)
             self.status_label.setText(f"Preview updated at {QTime.currentTime().toString()}")
+            self.trace_ui_event("preview_update", "PreviewWindow", "update completed")
             
         except Exception as e:
             self.progress_bar.setVisible(False)
             self.status_label.setText(f"Update failed: {str(e)}")
             self.logger.error(f"Preview update error: {e}")
+            self.trace_ui_event("preview_update", "PreviewWindow", f"error: {e}")
     
     def update_theme_info(self):
-        """Update theme information."""
+        """Update theme information with DPR-aware pixmap reloading."""
         try:
             theme_name = getattr(self.config, 'current_theme', 'Default')
             self.theme_info_label.setText(f"Theme: {theme_name}")
             
-            # Update color previews
+            # Update color previews with DPR-aware reloading
             if hasattr(self.config, 'colors'):
                 colors = self.config.colors
                 for color_name, preview in self.color_previews.items():
                     color_value = getattr(colors, color_name, '#000000')
                     preview.set_color(color_value)
+            
+            # Reload any pixmaps with proper DPR
+            from ..utils import get_device_pixel_ratio
+            dpr = get_device_pixel_ratio()
+            if dpr > 1.0:
+                # Force repaint for high-DPI displays
+                self.repaint()
             
         except Exception as e:
             self.theme_info_label.setText(f"Theme: Error loading ({str(e)})")
@@ -365,6 +418,8 @@ class PreviewWindow(QWidget):
             self.current_blur_label.setText(f"Blur: {'On' if current_config.get('blur_enabled', True) else 'Off'} ({current_config.get('blur_size', 8)})")
             self.current_animations_label.setText(f"Animations: {'On' if current_config.get('animations_enabled', True) else 'Off'}")
             self.current_rounding_label.setText(f"Rounding: {current_config.get('rounding', 8)}px")
+            self.current_shadow_label.setText(f"Shadow: {'On' if current_config.get('shadow_enabled', True) else 'Off'} ({current_config.get('shadow_range', 4)})")
+            self.current_rules_label.setText(f"Floating Border: {'Off' if current_config.get('no_border_floating', False) else 'On'}")
             
             # Update preview configuration
             self.preview_border_color.set_color(preview_config.get('border_color', '#5e81ac'))
@@ -373,6 +428,8 @@ class PreviewWindow(QWidget):
             self.preview_blur_label.setText(f"Blur: {'On' if preview_config.get('blur_enabled', True) else 'Off'} ({preview_config.get('blur_size', 8)})")
             self.preview_animations_label.setText(f"Animations: {'On' if preview_config.get('animations_enabled', True) else 'Off'}")
             self.preview_rounding_label.setText(f"Rounding: {preview_config.get('rounding', 8)}px")
+            self.preview_shadow_label.setText(f"Shadow: {'On' if preview_config.get('shadow_enabled', True) else 'Off'} ({preview_config.get('shadow_range', 4)})")
+            self.preview_rules_label.setText(f"Floating Border: {'Off' if preview_config.get('no_border_floating', False) else 'On'}")
             
             # Generate configuration diff
             self.update_config_diff(current_config, preview_config)
@@ -447,13 +504,34 @@ class PreviewWindow(QWidget):
                 except:
                     pass
             
+            # Get additional Hyprland options
             returncode, stdout, stderr = hyprctl("getoption decoration:rounding", json=True)
-            rounding = 8
+            rounding = 10
             if returncode == 0 and stdout:
                 try:
                     import json
                     data = json.loads(stdout)
-                    rounding = data.get('int', 8)
+                    rounding = data.get('int', 10)
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption decoration:drop_shadow", json=True)
+            shadow_enabled = True
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    shadow_enabled = data.get('int', 1) == 1
+                except:
+                    pass
+            
+            returncode, stdout, stderr = hyprctl("getoption decoration:shadow_range", json=True)
+            shadow_range = 4
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    shadow_range = data.get('int', 4)
                 except:
                     pass
             
@@ -467,6 +545,17 @@ class PreviewWindow(QWidget):
                 except:
                     pass
             
+            # Get window rules (textual preview)
+            returncode, stdout, stderr = hyprctl("getoption general:no_border_on_floating", json=True)
+            no_border_floating = False
+            if returncode == 0 and stdout:
+                try:
+                    import json
+                    data = json.loads(stdout)
+                    no_border_floating = data.get('int', 0) == 1
+                except:
+                    pass
+            
             return {
                 'gaps_in': gaps_in,
                 'gaps_out': gaps_out,
@@ -475,7 +564,10 @@ class PreviewWindow(QWidget):
                 'blur_enabled': blur_enabled,
                 'blur_size': blur_size,
                 'rounding': rounding,
-                'animations_enabled': animations_enabled
+                'shadow_enabled': shadow_enabled,
+                'shadow_range': shadow_range,
+                'animations_enabled': animations_enabled,
+                'no_border_floating': no_border_floating
             }
             
         except Exception as e:

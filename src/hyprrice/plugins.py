@@ -90,8 +90,8 @@ class PluginBase:
 class EnhancedPluginManager:
     """Enhanced plugin manager with comprehensive plugin lifecycle management and sandboxing."""
     
-    def __init__(self, plugins_dir: str, config_dir: str = None, enable_sandbox: bool = True, security_level: str = 'medium'):
-        self.plugins_dir = Path(plugins_dir)
+    def __init__(self, plugins_dir: str = None, config_dir: str = None, enable_sandbox: bool = True, security_level: str = 'medium'):
+        self.plugins_dir = Path(plugins_dir) if plugins_dir else Path.home() / ".config" / "hyprrice" / "plugins"
         self.config_dir = Path(config_dir) if config_dir else self.plugins_dir / "config"
         self.logger = logging.getLogger("PluginManager")
         
@@ -125,6 +125,11 @@ class EnhancedPluginManager:
         self._load_plugin_configs()
         self._discover_plugins()
         
+    def discover_plugins(self) -> List[str]:
+        """Discover all available plugins and return their names."""
+        self._discover_plugins()
+        return list(self.available_plugins.keys())
+    
     def _discover_plugins(self):
         """Discover all available plugins."""
         # Discover user plugins

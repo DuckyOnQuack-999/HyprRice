@@ -90,6 +90,18 @@ HyprRice is a comprehensive ricing tool for the Hyprland Wayland compositor ecos
 - **Path Restrictions:** Protection against path traversal attacks
 - **Command Sanitization:** Safe execution of system commands
 
+### Autoconfig System (New in v1.0)
+- **Access:** Tools → Autoconfig Wizard, or CLI: `hyprrice autoconfig`
+- **Features:**
+  - Intelligent system profiling (CPU, memory, GPU, display analysis)
+  - Four performance profiles: Performance, Visual, Battery, Minimal
+  - Hardware-aware optimization based on system capabilities
+  - Automatic backup creation with rollback capabilities
+  - Real-time configuration preview and application
+  - Interactive wizard with step-by-step guidance
+- **Use Cases:** First-time setup, system optimization, performance tuning, battery saving
+- **See Also:** [Autoconfig Guide](../AUTOCONFIG_GUIDE.md) for detailed usage instructions
+
 ### Package Options (New in v1.0)
 - **Access:** Tools → Package Options
 - **Features:**
@@ -128,6 +140,9 @@ HyprRice is a comprehensive ricing tool for the Hyprland Wayland compositor ecos
 ## See Also
 - [README](../README.md)
 - [Quick Start Tutorial](tutorials/quick_start.md)
-- [Plugin API Reference](reference/plugin_api.md)
+- [Plugin Development Guide](plugins.md)
+- [Security Guide](security.md)
+- [API Reference](api.md)
 - [Theme Format Reference](reference/theme_format.md)
+- [Autoconfig Guide](../AUTOCONFIG_GUIDE.md)
 - [Contributing Guide](development/contributing.md) 

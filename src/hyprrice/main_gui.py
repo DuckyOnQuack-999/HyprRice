@@ -34,6 +34,7 @@ from .gui.theme_editor import ThemeEditorDialog
 from .gui.preferences import PreferencesDialog
 from .gui.backup_manager import BackupSelectionDialog
 from .gui.plugin_manager import PluginManagerDialog
+from .gui.autoconfig_wizard import show_autoconfig_wizard
 from .plugins import EnhancedPluginManager
 from .performance import performance_monitor, profile
 
@@ -130,9 +131,8 @@ class HyprRiceGUI(QMainWindow):
         # Load default plugins after UI setup
         self.load_default_plugins()
         
-        # Apply modern theme with ultra-modern styling
-        self.modern_theme.set_accent_color("#6366f1")  # Modern indigo accent
-        self.modern_theme.set_theme("dark")  # Force dark theme for sleek look
+        # Apply modern theme with system accent color and auto-detection
+        self.modern_theme.set_theme("auto")  # Auto-detect system theme
         self.modern_theme.apply_to_application(QApplication.instance())
         
         # Apply Wayland-safe mode if enabled
@@ -631,6 +631,9 @@ class HyprRiceGUI(QMainWindow):
 
         tools_menu.addSeparator()
 
+        autoconfig_action = tools_menu.addAction("🚀 &Autoconfig Wizard")
+        autoconfig_action.triggered.connect(self._open_autoconfig_wizard)
+
         package_options_action = tools_menu.addAction("&Package Options")
         package_options_action.triggered.connect(self._open_package_options)
 
@@ -685,20 +688,14 @@ class HyprRiceGUI(QMainWindow):
         
         if theme == "auto":
             # Auto-detect theme based on system
-            theme = self.detect_system_theme()
+            theme = self.modern_theme._detect_system_theme()
         
-        # Apply modern theme
+        # Apply modern theme with system accent color
         self.modern_theme.set_theme(theme)
         self.modern_theme.apply_to_application(QApplication.instance())
         
         # Apply legacy theme manager if needed
         self.theme_manager.apply_theme(theme, self.config)
-    
-    def detect_system_theme(self) -> str:
-        """Detect system theme preference."""
-        # This is a simplified implementation
-        # In a real application, you'd check various system settings
-        return "dark"  # Default to dark theme
     
     
     def on_config_changed(self):
@@ -1236,6 +1233,14 @@ class HyprRiceGUI(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open test suite: {e}")
 
+    def _open_autoconfig_wizard(self):
+        """Open the autoconfig wizard."""
+        try:
+            show_autoconfig_wizard(main_app=self, parent=self)
+        except Exception as e:
+            self.logger.error(f"Error opening autoconfig wizard: {e}")
+            self.show_error_dialog("Autoconfig Wizard Error", f"Failed to open autoconfig wizard: {e}")
+
     def _open_package_options(self):
         """Open the package options dialog."""
         try:
@@ -1244,7 +1249,7 @@ class HyprRiceGUI(QMainWindow):
             dialog.exec()
         except Exception as e:
             self.logger.error(f"Error opening package options: {e}")
-            self.show_error_dialog("Package Options Error", f"Failed to open package options: {e}")
+            self.show_error_dialog(" Package Options Error", f"Failed to open package options: {e}")
 
     def _open_import_wizard(self):
         """Open the import from dotfiles wizard."""
@@ -1341,6 +1346,8 @@ class HyprRiceGUI(QMainWindow):
     def set_theme(self, theme: str):
         """Set application theme."""
         self.config.gui.theme = theme
+        self.modern_theme.set_theme(theme)
+        self.modern_theme.apply_to_application(QApplication.instance())
         self.apply_theme()
     
     def closeEvent(self, event):

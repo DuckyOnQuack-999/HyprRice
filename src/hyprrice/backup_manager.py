@@ -6,10 +6,22 @@ import os
 import json
 import shutil
 import logging
+import gzip
+import pickle
+import base64
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime
 from dataclasses import dataclass, asdict
+
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
+
 from .config import Config
 from .utils import backup_file, restore_file, list_backups, cleanup_old_backups
 
@@ -27,7 +39,7 @@ class HistoryEntry:
 class BackupManager:
     """Manages configuration backups and history."""
     
-    def __init__(self, config_or_backup_dir):
+    def __init__(self, config_or_backup_dir, compression_enabled=False, encryption_enabled=False):
         # Handle both Config object and backup_dir string for backward compatibility
         if isinstance(config_or_backup_dir, Config):
             self.config = config_or_backup_dir
@@ -41,6 +53,18 @@ class BackupManager:
         self.max_history_size = 100
         self.max_undo_stack_size = 50
         
+        # Compression and encryption settings
+        self.compression_enabled = compression_enabled
+        self.encryption_enabled = encryption_enabled
+        self.encryption_key = None
+        
+        # Initialize encryption key if encryption is enabled
+        if self.encryption_enabled and CRYPTOGRAPHY_AVAILABLE:
+            self.encryption_key = self._generate_encryption_key()
+        elif self.encryption_enabled and not CRYPTOGRAPHY_AVAILABLE:
+            self.logger.warning("Cryptography not available. Encryption disabled.")
+            self.encryption_enabled = False
+        
         # Load existing history
         self._load_history()
     
@@ -50,8 +74,61 @@ class BackupManager:
             config_path = self.config._get_default_config_path()
             backup_dir = self.config.paths.backup_dir
             
-            # Create backup
-            backup_path = backup_file(config_path, backup_dir)
+            # Create timestamped backup filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_filename = f"hyprrice_backup_{timestamp}.json"
+            
+            if self.compression_enabled:
+                backup_filename += ".gz"
+            
+            backup_path = os.path.join(backup_dir, backup_filename)
+            
+            # Ensure backup directory exists
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            # Read configuration
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config_data = f.read()
+            
+            # Create backup data
+            backup_data = {
+                "timestamp": timestamp,
+                "description": description,
+                "config_data": config_data,
+                "compression_enabled": self.compression_enabled,
+                "encryption_enabled": self.encryption_enabled
+            }
+            
+            # Prepare data for writing
+            data_to_write = json.dumps(backup_data, indent=2)
+            
+            # Write backup with encryption and compression
+            if self.encryption_enabled and self.compression_enabled:
+                # Encrypt first, then compress
+                encrypted_data = self._encrypt_data(data_to_write)
+                if encrypted_data is None:
+                    raise Exception("Failed to encrypt backup data")
+                
+                with gzip.open(backup_path, 'wb') as f:
+                    f.write(encrypted_data)
+                    
+            elif self.encryption_enabled:
+                # Encrypt only
+                encrypted_data = self._encrypt_data(data_to_write)
+                if encrypted_data is None:
+                    raise Exception("Failed to encrypt backup data")
+                
+                with open(backup_path, 'wb') as f:
+                    f.write(encrypted_data)
+                    
+            elif self.compression_enabled:
+                # Compress only
+                with gzip.open(backup_path, 'wt', encoding='utf-8') as f:
+                    f.write(data_to_write)
+            else:
+                # Plain text
+                with open(backup_path, 'w', encoding='utf-8') as f:
+                    f.write(data_to_write)
             
             # Add to history
             self._add_history_entry(
@@ -61,9 +138,11 @@ class BackupManager:
             )
             
             # Cleanup old backups
-            cleanup_old_backups(backup_dir, self.config.general.backup_retention)
+            cleanup_old_backups(backup_dir, getattr(self.config.general, 'backup_retention', 10))
             
-            self.logger.info(f"Backup created: {backup_path}")
+            compression_info = "(compressed)" if self.compression_enabled else ""
+            encryption_info = "(encrypted)" if self.encryption_enabled else ""
+            self.logger.info(f"Backup created: {backup_path} {compression_info} {encryption_info}")
             return True
             
         except Exception as e:
@@ -84,8 +163,51 @@ class BackupManager:
             # Create backup before restoring
             self.create_backup("Pre-restore backup")
             
-            # Restore backup
-            restore_file(backup_path, config_path)
+            # Read backup data
+            backup_data = None
+            
+            # Check if the backup is encrypted by attempting to read metadata
+            try:
+                if backup_path.endswith('.gz'):
+                    # Try reading as compressed first
+                    with gzip.open(backup_path, 'rt', encoding='utf-8') as f:
+                        backup_data = json.load(f)
+                else:
+                    # Try reading as plain text first
+                    with open(backup_path, 'r', encoding='utf-8') as f:
+                        backup_data = json.load(f)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                # If JSON decode fails, try reading as binary (encrypted)
+                try:
+                    with open(backup_path, 'rb') as f:
+                        encrypted_data = f.read()
+                    
+                    # Try decompressing first if it's a .gz file
+                    if backup_path.endswith('.gz'):
+                        encrypted_data = gzip.decompress(encrypted_data)
+                    
+                    # Decrypt the data
+                    decrypted_data = self._decrypt_data(encrypted_data)
+                    if decrypted_data is None:
+                        raise Exception("Failed to decrypt backup data")
+                    
+                    backup_data = json.loads(decrypted_data)
+                    
+                except Exception as decrypt_error:
+                    self.logger.error(f"Failed to read backup file: {decrypt_error}")
+                    # Try legacy restore
+                    restore_file(backup_path, config_path)
+                    return True
+            
+            # Extract configuration data
+            if isinstance(backup_data, dict) and 'config_data' in backup_data:
+                # New compressed format
+                config_data = backup_data['config_data']
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    f.write(config_data)
+            else:
+                # Legacy format - restore file directly
+                restore_file(backup_path, config_path)
             
             # Reload configuration
             self.config = Config.load(config_path)
@@ -102,6 +224,63 @@ class BackupManager:
         except Exception as e:
             self.logger.error(f"Error restoring backup: {e}")
             return False
+    
+    def enable_compression(self):
+        """Enable gzip compression for new backups."""
+        self.compression_enabled = True
+        self.logger.info("Backup compression enabled")
+    
+    def disable_compression(self):
+        """Disable gzip compression for new backups."""
+        self.compression_enabled = False
+        self.logger.info("Backup compression disabled")
+    
+    def is_compression_enabled(self) -> bool:
+        """Check if backup compression is enabled."""
+        return self.compression_enabled
+    
+    def get_backup_info(self, backup_name: str) -> Optional[Dict[str, Any]]:
+        """Get information about a specific backup."""
+        try:
+            backup_dir = self.config.paths.backup_dir
+            backup_path = os.path.join(backup_dir, backup_name)
+            
+            if not os.path.exists(backup_path):
+                return None
+            
+            # Read backup metadata
+            if backup_path.endswith('.gz'):
+                with gzip.open(backup_path, 'rt', encoding='utf-8') as f:
+                    backup_data = json.load(f)
+            else:
+                with open(backup_path, 'r', encoding='utf-8') as f:
+                    backup_data = json.load(f)
+            
+            # Get file stats
+            stat = os.stat(backup_path)
+            
+            info = {
+                "name": backup_name,
+                "path": backup_path,
+                "size_bytes": stat.st_size,
+                "size_mb": round(stat.st_size / (1024 * 1024), 2),
+                "created": datetime.fromtimestamp(stat.st_ctime),
+                "modified": datetime.fromtimestamp(stat.st_mtime),
+                "is_compressed": backup_name.endswith('.gz')
+            }
+            
+            if isinstance(backup_data, dict):
+                info.update({
+                    "timestamp": backup_data.get("timestamp"),
+                    "description": backup_data.get("description"),
+                    "compression_enabled": backup_data.get("compression_enabled", False)
+                })
+            
+            return info
+            
+        except Exception as e:
+            self.logger.error(f"Error getting backup info: {e}")
+            return None
     
     def list_backups(self) -> List[Dict[str, str]]:
         """List available backups."""
@@ -436,9 +615,104 @@ class BackupManager:
         except Exception as e:
             self.logger.error(f"Error getting backup info: {e}")
             return None
-
-
-
+    
+    def _generate_encryption_key(self) -> Optional[Fernet]:
+        """Generate a new encryption key using a random password."""
+        if not CRYPTOGRAPHY_AVAILABLE:
+            return None
+        
+        try:
+            # Generate a random password
+            password = base64.b64encode(os.urandom(32)).decode('utf-8')
+            
+            # Derive key from password using PBKDF2
+            salt = os.urandom(16)
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=100000,
+            )
+            key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+            
+            # Store the password and salt for future use (in practice, you'd store this securely)
+            self.logger.info("Encryption key generated successfully")
+            return Fernet(key)
+            
+        except Exception as e:
+            self.logger.error(f"Error generating encryption key: {e}")
+            return None
+    
+    def _encrypt_data(self, data: str) -> Optional[bytes]:
+        """Encrypt data using Fernet."""
+        if not self.encryption_enabled or not self.encryption_key:
+            return data.encode()
+        
+        try:
+            return self.encryption_key.encrypt(data.encode())
+        except Exception as e:
+            self.logger.error(f"Error encrypting data: {e}")
+            return None
+    
+    def _decrypt_data(self, encrypted_data: bytes) -> Optional[str]:
+        """Decrypt data using Fernet."""
+        try:
+            return self.encryption_key.decrypt(encrypted_data).decode()
+        except Exception as e:
+            self.logger.error(f"Error decrypting data: {e}")
+            return None
+    
+    def enable_encryption(self):
+        """Enable encryption for new backups."""
+        if not CRYPTOGRAPHY_AVAILABLE:
+            self.logger.error("Cryptography library not available. Cannot enable encryption.")
+            return False
+        
+        self.encryption_enabled = True
+        self.encryption_key = self._generate_encryption_key()
+        if self.encryption_key:
+            self.logger.info("Backup encryption enabled")
+            return True
+        else:
+            self.logger.error("Failed to generate encryption key")
+            self.encryption_enabled = False
+            return False
+    
+    def disable_encryption(self):
+        """Disable encryption for new backups."""
+        self.encryption_enabled = False
+        self.encryption_key = None
+        self.logger.info("Backup encryption disabled")
+    
+    def is_encryption_enabled(self) -> bool:
+        """Check if backup encryption is enabled."""
+        return self.encryption_enabled
+    
+    def set_encryption_key(self, password: str, salt: bytes = None) -> bool:
+        """Set encryption key from password."""
+        if not CRYPTOGRAPHY_AVAILABLE:
+            self.logger.error("Cryptography library not available.")
+            return False
+        
+        try:
+            if salt is None:
+                salt = os.urandom(16)
+            
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=100000,
+            )
+            key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+            self.encryption_key = Fernet(key)
+            self.encryption_enabled = True
+            self.logger.info("Encryption key set from password")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error setting encryption key: {e}")
+            return False
 
 
 

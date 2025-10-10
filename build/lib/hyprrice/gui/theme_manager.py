@@ -9,7 +9,97 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from ..config import Config
-from ..utils import validate_color
+from ..utils import validate_color, trace_ui_event
+
+
+class ThemeApplier:
+    """Safe theme application with proper stylesheet handling."""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+    
+    def compile_qss(self, theme: Dict[str, Any]) -> str:
+        """Compile theme data into QSS with variable substitution."""
+        try:
+            colors = theme.get('colors', {})
+            background = colors.get('background', '#2e3440')
+            text = colors.get('text', '#eceff4')
+            secondary = colors.get('secondary', '#3b4252')
+            accent = colors.get('accent', '#5e81ac')
+            
+            qss_template = f"""
+            QMainWindow {{
+                background-color: {background};
+                color: {text};
+            }}
+            QWidget {{
+                background-color: {background};
+                color: {text};
+            }}
+            QPushButton {{
+                background-color: {secondary};
+                color: {text};
+                border: 1px solid {accent};
+                border-radius: 4px;
+                padding: 5px;
+            }}
+            QPushButton:hover {{
+                background-color: {accent};
+            }}
+            QTabWidget::pane {{
+                border: 1px solid {accent};
+                background-color: {background};
+            }}
+            QTabBar::tab {{
+                background-color: {secondary};
+                color: {text};
+                padding: 8px 12px;
+                margin-right: 2px;
+            }}
+            QTabBar::tab:selected {{
+                background-color: {accent};
+            }}
+            """
+            return qss_template
+        except Exception as e:
+            self.logger.error(f"Error compiling QSS: {e}")
+            return ""
+    
+    def apply_to_app(self, app, theme: Dict[str, Any]):
+        """Apply theme to entire application safely."""
+        try:
+            qss = self.compile_qss(theme)
+            if qss:
+                # Safe stylesheet application
+                app.setUpdatesEnabled(False)
+                app.style().unpolish(app)
+                app.setStyleSheet(qss)
+                app.style().polish(app)
+                app.updateGeometry()
+                app.adjustSize()
+                app.setUpdatesEnabled(True)
+                app.repaint()
+                trace_ui_event("theme_apply", "app", "global stylesheet applied")
+        except Exception as e:
+            self.logger.error(f"Error applying theme to app: {e}")
+    
+    def apply_to_widget(self, widget, theme: Dict[str, Any]):
+        """Apply theme to specific widget (preview-only)."""
+        try:
+            qss = self.compile_qss(theme)
+            if qss:
+                # Safe widget stylesheet application
+                widget.setUpdatesEnabled(False)
+                widget.style().unpolish(widget)
+                widget.setStyleSheet(qss)
+                widget.style().polish(widget)
+                widget.updateGeometry()
+                widget.adjustSize()
+                widget.setUpdatesEnabled(True)
+                widget.repaint()
+                trace_ui_event("theme_apply", "widget", "preview stylesheet applied")
+        except Exception as e:
+            self.logger.error(f"Error applying theme to widget: {e}")
 
 
 class ThemeManager:
@@ -19,6 +109,7 @@ class ThemeManager:
         self.themes_dir = Path(themes_dir)
         self.themes_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(__name__)
+        self.applier = ThemeApplier()
         
         # Default themes
         self._default_themes = {
@@ -40,7 +131,43 @@ class ThemeManager:
                     "gaps_in": 5,
                     "gaps_out": 10,
                     "blur_enabled": True,
-                    "blur_size": 8
+                    "blur_size": 8,
+                    "blur_passes": 1,
+                    "blur_noise": 0.0117,
+                    "rounding": 10,
+                    "shadow_range": 4,
+                    "shadow_render_power": 3,
+                    "shadow_color": "rgba(0, 0, 0, 0.5)",
+                    "no_border_on_floating": False,
+                    "border_size": 2,
+                    "col_inactive_border": "rgba(100, 115, 245, 0.5)",
+                    "col_active_border": "#5e81ac",
+                    "animations": {
+                        "enabled": True,
+                        "animation": "windows,1,7,myBezier",
+                        "animation": "border,1,10,default",
+                        "animation": "fade,1,7,default",
+                        "animation": "workspaces,1,6,default"
+                    },
+                    "input": {
+                        "kb_repeat_rate": 25,
+                        "kb_repeat_delay": 600,
+                        "touchpad": {
+                            "natural_scroll": False,
+                            "disable_while_typing": True
+                        }
+                    },
+                    "layout": {
+                        "dwindle": {
+                            "pseudotile": True,
+                            "preserve_split": True
+                        }
+                    },
+                    "windowrule": [
+                        "float, ^(pavucontrol)$",
+                        "float, ^(blueman-manager)$",
+                        "float, ^(nm-connection-editor)$"
+                    ]
                 },
                 "waybar": {
                     "background_color": "rgba(46, 52, 64, 0.8)",
@@ -162,6 +289,12 @@ class ThemeManager:
             if not theme_data:
                 self.logger.error(f"Theme {theme_name} not found")
                 return False
+            
+            # Use the new safe applier for UI themes
+            from PyQt6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app:
+                self.applier.apply_to_app(app, theme_data)
             
             # Apply Hyprland settings
             if 'hyprland' in theme_data:

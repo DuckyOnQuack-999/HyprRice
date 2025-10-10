@@ -1,8 +1,11 @@
 """
-Modern theme system for HyprRice with dark/light modes and accent colors.
+Modern theme system for HyprRice with dark/light modes and system accent colors.
 """
 
 import os
+import subprocess
+import json
+import re
 from typing import Dict, Any, Optional
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal
@@ -11,109 +14,221 @@ from PyQt6.QtWidgets import QApplication
 
 
 class ModernTheme(QObject):
-    """Modern theme system with dark/light modes and accent colors."""
+    """Modern theme system with dark/light modes and system accent colors."""
     
     theme_changed = pyqtSignal(str)  # Emitted when theme changes
     
     def __init__(self):
         super().__init__()
-        self.current_theme = "dark"
-        self.accent_color = "#5e81ac"  # Default accent color
+        self.current_theme = "auto"
+        self.system_accent_color = self._detect_system_accent_color()
         self.themes = {
-            "dark": self._get_dark_theme(),
-            "light": self._get_light_theme(),
+            "dark": self._get_modern_dark_theme(),
+            "light": self._get_greyish_light_theme(),
             "auto": None  # Will be determined dynamically
         }
     
-    def _get_dark_theme(self) -> Dict[str, str]:
-        """Get dark theme colors - ultra modern and sleek."""
+    def _detect_system_accent_color(self) -> str:
+        """Detect system accent color from various desktop environments."""
+        try:
+            # Try KDE/Plasma first
+            kde_config = Path.home() / ".config" / "kdeglobals"
+            if kde_config.exists():
+                with open(kde_config, 'r') as f:
+                    content = f.read()
+                    # Look for accent color in KDE config
+                    accent_match = re.search(r'AccentColor=(\d+,\d+,\d+)', content)
+                    if accent_match:
+                        r, g, b = map(int, accent_match.group(1).split(','))
+                        return f"#{r:02x}{g:02x}{b:02x}"
+            
+            # Try GTK theme
+            gtk_config = Path.home() / ".config" / "gtk-3.0" / "settings.ini"
+            if gtk_config.exists():
+                with open(gtk_config, 'r') as f:
+                    content = f.read()
+                    # Look for accent color in GTK config
+                    accent_match = re.search(r'accent_color=([^;]+)', content)
+                    if accent_match:
+                        return accent_match.group(1)
+            
+            # Try GNOME settings
+            try:
+                result = subprocess.run(['gsettings', 'get', 'org.gnome.desktop.interface', 'accent-color'], 
+                                      capture_output=True, text=True, timeout=2)
+                if result.returncode == 0 and result.stdout.strip() != "'default'":
+                    color = result.stdout.strip().strip("'")
+                    if color.startswith('#'):
+                        return color
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            # Try XFCE
+            xfce_config = Path.home() / ".config" / "xfce4" / "xfconf" / "xfce-perchannel-xml" / "xsettings.xml"
+            if xfce_config.exists():
+                with open(xfce_config, 'r') as f:
+                    content = f.read()
+                    # Look for accent color in XFCE config
+                    accent_match = re.search(r'<property name="AccentColor" type="string" value="([^"]+)"', content)
+                    if accent_match:
+                        return accent_match.group(1)
+            
+            # Try system environment variables
+            accent_env = os.environ.get('HYPRRICE_ACCENT_COLOR')
+            if accent_env and accent_env.startswith('#'):
+                return accent_env
+            
+            # Default modern accent color
+            return "#6366f1"  # Modern indigo
+            
+        except Exception:
+            # Fallback to default
+            return "#6366f1"  # Modern indigo
+    
+    def _get_modern_dark_theme(self) -> Dict[str, str]:
+        """Get modern dark theme colors with system accent."""
+        accent = self.system_accent_color
+        
         return {
-            # Base colors - deeper, more modern
-            "bg_primary": "#1a1a1a",
-            "bg_secondary": "#252525", 
-            "bg_tertiary": "#2a2a2a",
-            "bg_hover": "#333333",
-            "bg_pressed": "#404040",
-            "bg_elevated": "#2d2d2d",
+            # Base colors - modern dark with proper contrast
+            "bg_primary": "#0f0f0f",      # Deep black
+            "bg_secondary": "#1a1a1a",    # Slightly lighter
+            "bg_tertiary": "#262626",     # Card backgrounds
+            "bg_hover": "#333333",        # Hover states
+            "bg_pressed": "#404040",      # Pressed states
+            "bg_elevated": "#1f1f1f",     # Elevated surfaces
             
-            # Text colors - high contrast
-            "text_primary": "#ffffff",
-            "text_secondary": "#e0e0e0",
-            "text_tertiary": "#b0b0b0",
-            "text_disabled": "#666666",
-            "text_accent": self.accent_color,
+            # Text colors - high contrast for accessibility
+            "text_primary": "#ffffff",    # Primary text
+            "text_secondary": "#e5e5e5",  # Secondary text
+            "text_tertiary": "#a3a3a3",   # Tertiary text
+            "text_disabled": "#737373",   # Disabled text
+            "text_accent": accent,        # Accent text
             
-            # Accent colors - vibrant and modern
-            "accent": self.accent_color,
-            "accent_hover": "#7c9eff",
-            "accent_pressed": "#4a6bff",
-            "accent_light": "#e8f0ff",
+            # Accent colors - system-based
+            "accent": accent,
+            "accent_hover": self._lighten_color(accent, 0.2),
+            "accent_pressed": self._darken_color(accent, 0.2),
+            "accent_light": self._lighten_color(accent, 0.8),
             
-            # Status colors - modern palette
-            "success": "#00d4aa",
-            "warning": "#ffb800", 
-            "error": "#ff4757",
-            "info": "#3742fa",
+            # Status colors - modern and accessible
+            "success": "#10b981",         # Emerald
+            "warning": "#f59e0b",         # Amber
+            "error": "#ef4444",           # Red
+            "info": "#3b82f6",            # Blue
             
             # Border colors - subtle but defined
-            "border": "#404040",
-            "border_light": "#333333",
-            "border_focus": self.accent_color,
-            "border_hover": "#555555",
+            "border": "#404040",          # Default borders
+            "border_light": "#262626",    # Light borders
+            "border_focus": accent,       # Focus borders
+            "border_hover": "#525252",    # Hover borders
             
-            # Shadow colors - deeper shadows
-            "shadow": "rgba(0, 0, 0, 0.4)",
-            "shadow_hover": "rgba(0, 0, 0, 0.5)",
-            "shadow_light": "rgba(0, 0, 0, 0.2)",
+            # Shadow colors - deep and modern
+            "shadow": "rgba(0, 0, 0, 0.5)",
+            "shadow_hover": "rgba(0, 0, 0, 0.6)",
+            "shadow_light": "rgba(0, 0, 0, 0.3)",
             
             # Glass effect colors
-            "glass_bg": "rgba(42, 42, 42, 0.8)",
+            "glass_bg": "rgba(26, 26, 26, 0.9)",
             "glass_border": "rgba(255, 255, 255, 0.1)",
         }
     
-    def _get_light_theme(self) -> Dict[str, str]:
-        """Get light theme colors."""
+    def _get_greyish_light_theme(self) -> Dict[str, str]:
+        """Get greyish light theme colors with system accent."""
+        accent = self.system_accent_color
+        
         return {
-            # Base colors
-            "bg_primary": "#f8f9fa",
-            "bg_secondary": "#e9ecef",
-            "bg_tertiary": "#dee2e6",
-            "bg_hover": "#ced4da",
-            "bg_pressed": "#adb5bd",
+            # Base colors - greyish instead of bright white
+            "bg_primary": "#f5f5f5",      # Light grey background
+            "bg_secondary": "#e8e8e8",    # Slightly darker grey
+            "bg_tertiary": "#d4d4d4",     # Card backgrounds
+            "bg_hover": "#c7c7c7",        # Hover states
+            "bg_pressed": "#b8b8b8",      # Pressed states
+            "bg_elevated": "#f0f0f0",     # Elevated surfaces
             
-            # Text colors
-            "text_primary": "#212529",
-            "text_secondary": "#495057",
-            "text_tertiary": "#6c757d",
-            "text_disabled": "#adb5bd",
+            # Text colors - dark on light
+            "text_primary": "#1a1a1a",    # Primary text
+            "text_secondary": "#404040",  # Secondary text
+            "text_tertiary": "#666666",   # Tertiary text
+            "text_disabled": "#999999",   # Disabled text
+            "text_accent": accent,        # Accent text
             
-            # Accent colors
-            "accent": self.accent_color,
-            "accent_hover": "#4a6fa5",
-            "accent_pressed": "#3d5a8a",
+            # Accent colors - system-based
+            "accent": accent,
+            "accent_hover": self._darken_color(accent, 0.1),
+            "accent_pressed": self._darken_color(accent, 0.2),
+            "accent_light": self._lighten_color(accent, 0.9),
             
-            # Status colors
-            "success": "#28a745",
-            "warning": "#ffc107",
-            "error": "#dc3545",
-            "info": "#17a2b8",
+            # Status colors - accessible on light background
+            "success": "#059669",         # Darker emerald
+            "warning": "#d97706",         # Darker amber
+            "error": "#dc2626",           # Darker red
+            "info": "#2563eb",            # Darker blue
             
-            # Border colors
-            "border": "#ced4da",
-            "border_focus": self.accent_color,
-            "border_hover": "#4a6fa5",
+            # Border colors - subtle but defined
+            "border": "#d4d4d4",          # Default borders
+            "border_light": "#e5e5e5",    # Light borders
+            "border_focus": accent,       # Focus borders
+            "border_hover": "#a3a3a3",    # Hover borders
             
-            # Shadow colors
+            # Shadow colors - light shadows
             "shadow": "rgba(0, 0, 0, 0.1)",
             "shadow_hover": "rgba(0, 0, 0, 0.15)",
+            "shadow_light": "rgba(0, 0, 0, 0.05)",
+            
+            # Glass effect colors
+            "glass_bg": "rgba(232, 232, 232, 0.9)",
+            "glass_border": "rgba(0, 0, 0, 0.1)",
         }
+    
+    def _lighten_color(self, color: str, factor: float) -> str:
+        """Lighten a hex color by a factor (0-1)."""
+        if not color.startswith('#'):
+            return color
+        
+        try:
+            # Remove # and convert to RGB
+            hex_color = color[1:]
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            
+            # Lighten by factor
+            r = min(255, int(r + (255 - r) * factor))
+            g = min(255, int(g + (255 - g) * factor))
+            b = min(255, int(b + (255 - b) * factor))
+            
+            return f"#{r:02x}{g:02x}{b:02x}"
+        except (ValueError, IndexError):
+            return color
+    
+    def _darken_color(self, color: str, factor: float) -> str:
+        """Darken a hex color by a factor (0-1)."""
+        if not color.startswith('#'):
+            return color
+        
+        try:
+            # Remove # and convert to RGB
+            hex_color = color[1:]
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            
+            # Darken by factor
+            r = max(0, int(r * (1 - factor)))
+            g = max(0, int(g * (1 - factor)))
+            b = max(0, int(b * (1 - factor)))
+            
+            return f"#{r:02x}{g:02x}{b:02x}"
+        except (ValueError, IndexError):
+            return color
     
     def set_accent_color(self, color: str):
         """Set the accent color for the current theme."""
-        self.accent_color = color
+        self.system_accent_color = color
         # Update themes with new accent color
-        self.themes["dark"] = self._get_dark_theme()
-        self.themes["light"] = self._get_light_theme()
+        self.themes["dark"] = self._get_modern_dark_theme()
+        self.themes["light"] = self._get_greyish_light_theme()
         self.theme_changed.emit(self.current_theme)
     
     def set_theme(self, theme: str):
@@ -126,19 +241,66 @@ class ModernTheme(QObject):
             self.theme_changed.emit(theme)
     
     def _detect_system_theme(self) -> str:
-        """Detect system theme preference."""
-        # Try to detect from environment variables
-        gtk_theme = os.environ.get("GTK_THEME", "").lower()
-        if "dark" in gtk_theme:
+        """Detect system theme preference from various sources."""
+        try:
+            # Try GNOME settings first
+            try:
+                result = subprocess.run(['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'], 
+                                      capture_output=True, text=True, timeout=2)
+                if result.returncode == 0:
+                    scheme = result.stdout.strip().strip("'")
+                    if 'dark' in scheme.lower():
+                        return "dark"
+                    elif 'light' in scheme.lower():
+                        return "light"
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            # Try KDE/Plasma
+            kde_config = Path.home() / ".config" / "kdeglobals"
+            if kde_config.exists():
+                with open(kde_config, 'r') as f:
+                    content = f.read()
+                    if 'ColorScheme=Dark' in content or 'ColorScheme=BreezeDark' in content:
+                        return "dark"
+                    elif 'ColorScheme=Light' in content or 'ColorScheme=BreezeLight' in content:
+                        return "light"
+            
+            # Try GTK theme
+            gtk_theme = os.environ.get("GTK_THEME", "").lower()
+            if "dark" in gtk_theme:
+                return "dark"
+            elif "light" in gtk_theme:
+                return "light"
+            
+            # Check for common dark theme indicators
+            color_scheme = os.environ.get("COLORFGBG", "")
+            if color_scheme and color_scheme.startswith("15;"):  # Dark background
+                return "dark"
+            elif color_scheme and color_scheme.startswith("0;"):  # Light background
+                return "light"
+            
+            # Try XFCE
+            xfce_config = Path.home() / ".config" / "xfce4" / "xfconf" / "xfce-perchannel-xml" / "xsettings.xml"
+            if xfce_config.exists():
+                with open(xfce_config, 'r') as f:
+                    content = f.read()
+                    if 'Dark' in content:
+                        return "dark"
+                    elif 'Light' in content:
+                        return "light"
+            
+            # Check system environment
+            theme_env = os.environ.get('HYPRRICE_THEME')
+            if theme_env in ['dark', 'light']:
+                return theme_env
+            
+            # Default to dark theme for modern look
             return "dark"
-        
-        # Check for common dark theme indicators
-        color_scheme = os.environ.get("COLORFGBG", "")
-        if color_scheme and color_scheme.startswith("15;"):  # Dark background
+            
+        except Exception:
+            # Fallback to dark theme
             return "dark"
-        
-        # Default to dark theme for modern look
-        return "dark"
     
     def get_current_colors(self) -> Dict[str, str]:
         """Get colors for the current theme."""
@@ -148,6 +310,18 @@ class ModernTheme(QObject):
             theme = self.current_theme
         
         return self.themes.get(theme, self.themes["dark"])
+    
+    def get_available_themes(self) -> list:
+        """Get list of available themes."""
+        return ["auto", "dark", "light"]
+    
+    def get_current_theme(self) -> str:
+        """Get the current theme name."""
+        return self.current_theme
+    
+    def get_system_accent_color(self) -> str:
+        """Get the detected system accent color."""
+        return self.system_accent_color
     
     def get_qss(self) -> str:
         """Get QSS stylesheet for the current theme."""

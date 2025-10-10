@@ -7,10 +7,11 @@ import logging
 from typing import Dict, Any, Optional
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QScrollArea,
-    QGroupBox, QGridLayout, QPushButton, QProgressBar, QTextEdit
+    QGroupBox, QGridLayout, QPushButton, QProgressBar, QTextEdit,
+    QSlider, QColorDialog, QCheckBox, QTabWidget
 )
 from PyQt6.QtCore import Qt, QTimer, QTime, pyqtSignal
-from PyQt6.QtGui import QColor, QPalette, QFont, QPixmap, QPainter
+from PyQt6.QtGui import QColor, QPalette, QFont, QPixmap, QPainter, QBrush, QPen
 
 
 class ColorPreview(QFrame):
@@ -45,6 +46,732 @@ class ColorPreview(QFrame):
         except:
             self.setStyleSheet("background-color: #fff; border: 1px solid red;")
             self.setToolTip(f"{self.label}: Invalid color")
+
+
+class InteractivePreviewWidget(QWidget):
+    """Interactive visual preview widget that shows a mockup of Hyprland windows."""
+    
+    # Signals for configuration changes
+    configuration_changed = pyqtSignal(dict)
+    
+    def __init__(self, theme_manager=None):
+        super().__init__()
+        self.theme_manager = theme_manager
+        self.gap = 10
+        self.border_size = 4
+        self.border_color = QColor("#ff00ff")  # default pink neon
+        self.rounding = 12
+        self.blur_enabled = True
+        self.blur_size = 8
+        self.blur_passes = 2
+        self.shadow_enabled = True
+        self.shadow_color = QColor("#000000")
+        self.shadow_opacity = 0.3
+        self.shadow_size = 6
+        self.shadow_offset_x = 0
+        self.shadow_offset_y = 4
+        self.animation_enabled = True
+        self.animation_duration = 300
+        self.current_theme_type = "dark"  # Will be updated by theme manager
+        self.setMinimumSize(400, 300)
+        
+        # Debounce timer for configuration changes
+        self.debounce_timer = QTimer()
+        self.debounce_timer.setSingleShot(True)
+        self.debounce_timer.timeout.connect(self._emit_configuration_changed)
+        
+        # Connect to theme manager if available
+        if self.theme_manager:
+            self.theme_manager.theme_changed.connect(self._on_theme_changed)
+    
+    def _on_theme_changed(self, theme: str):
+        """Handle theme changes and update preview colors accordingly."""
+        self.current_theme_type = theme
+        
+        # Update colors based on theme
+        if self.theme_manager:
+            theme_colors = self.theme_manager.get_current_colors()
+            
+            # Update border color to match theme accent
+            if "accent_primary" in theme_colors:
+                self.border_color = QColor(theme_colors["accent_primary"])
+            
+            # Update background colors for proper theme integration
+            self.theme_bg_colors = [
+                theme_colors.get("bg_primary", "#2e2e3e"),
+                theme_colors.get("bg_secondary", "#3e3e4e"),
+                theme_colors.get("bg_tertiary", "#2a2a3a"),
+                theme_colors.get("bg_elevated", "#3a3a4a")
+            ]
+            
+            # Update shadow color for theme consistency
+            if self.theme_manager.is_dark_theme(theme):
+                self.shadow_color = QColor(theme_colors.get("shadow_dark", "#000000"))
+            else:
+                self.shadow_color = QColor(theme_colors.get("shadow_light", "#888888"))
+        
+        self.update()  # Redraw with new theme
+        
+    def set_gap(self, gap: int):
+        """Set the gap size and update display."""
+        self.gap = gap
+        self.update()
+        
+    def set_border_size(self, border_size: int):
+        """Set the border size and update display."""
+        self.border_size = border_size
+        self.update()
+        
+    def set_border_color(self, color: QColor):
+        """Set the border color and update display."""
+        self.border_color = color
+        self.update()
+        
+    def set_rounding(self, rounding: int):
+        """Set the rounding radius and update display."""
+        self.rounding = rounding
+        self._debounce_update()
+        
+    def set_blur_enabled(self, enabled: bool):
+        """Enable or disable blur effects."""
+        self.blur_enabled = enabled
+        self._debounce_update()
+        
+    def set_blur_size(self, size: int):
+        """Set blur effect size."""
+        self.blur_size = max(0, size)
+        self._debounce_update()
+        
+    def set_blur_passes(self, passes: int):
+        """Set blur effect passes."""
+        self.blur_passes = max(1, passes)
+        self._debounce_update()
+        
+    def set_shadow_enabled(self, enabled: bool):
+        """Enable or disable shadow effects."""
+        self.shadow_enabled = enabled
+        self._debounce_update()
+        
+    def set_shadow_color(self, color: QColor):
+        """Set shadow color."""
+        self.shadow_color = color
+        self._debounce_update()
+        
+    def set_shadow_opacity(self, opacity: float):
+        """Set shadow opacity (0.0-1.0)."""
+        self.shadow_opacity = max(0.0, min(1.0, opacity))
+        self._debounce_update()
+        
+    def set_shadow_size(self, size: int):
+        """Set shadow size."""
+        self.shadow_size = max(0, size)
+        self._debounce_update()
+        
+    def set_shadow_offset(self, x: int, y: int):
+        """Set shadow offset."""
+        self.shadow_offset_x = x
+        self.shadow_offset_y = y
+        self._debounce_update()
+        
+    def set_animation_enabled(self, enabled: bool):
+        """Enable or disable animations."""
+        self.animation_enabled = enabled
+        self._debounce_update()
+        
+    def set_animation_duration(self, duration: int):
+        """Set animation duration in milliseconds."""
+        self.animation_duration = max(0, duration)
+        self._debounce_update()
+        
+    def _debounce_update(self):
+        """Debounced update to prevent excessive redraws."""
+        self.debounce_timer.stop()
+        self.debounce_timer.start(100)  # 100ms debounce
+        
+    def _emit_configuration_changed(self):
+        """Emit configuration changed signal with current settings."""
+        config = self.get_current_config()
+        self.configuration_changed.emit(config)
+        
+    def get_current_config(self) -> Dict[str, Any]:
+        """Get current configuration."""
+        return {
+            "general": {
+                "gaps_in": self.gap,
+                "gaps_out": self.gap * 2,
+                "border_size": self.border_size,
+                "col.active_border": self.border_color.name(),
+                "col.inactive_border": self.border_color.name() + "66",  # Add transparency
+            },
+            "decoration": {
+                "rounding": self.rounding,
+                "blur": {
+                    "enabled": self.blur_enabled,
+                    "size": self.blur_size,
+                    "passes": self.blur_passes,
+                },
+                "drop_shadow": self.shadow_enabled,
+                "shadow_color": self.shadow_color.name(),
+                "shadow_range": self.shadow_size,
+                "shadow_offset": f"{self.shadow_offset_x} {self.shadow_offset_y}",
+            },
+            "animations": {
+                "enabled": self.animation_enabled,
+                "animation": ["windows", 1, int(self.animation_duration / 100), "myBezier"]
+            }
+        }
+        
+    def paintEvent(self, event):
+        """Paint the window mockup."""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Fill background with theme-appropriate color
+        if hasattr(self, 'theme_bg_colors') and self.theme_bg_colors:
+            bg_color = QColor(self.theme_bg_colors[0])
+        elif self.current_theme_type == "light":
+            bg_color = QColor("#f5f5f5")  # Light theme background
+        else:
+            bg_color = QColor("#1e1e2e")  # Dark theme background
+        
+        painter.fillRect(self.rect(), bg_color)
+        
+        # Calculate window dimensions
+        margin = 20
+        available_width = self.width() - 2 * margin
+        available_height = self.height() - 2 * margin
+        
+        # Draw multiple mock windows to show gaps
+        window_width = (available_width - self.gap) // 2
+        window_height = (available_height - self.gap) // 2
+        
+        windows = [
+            (margin + self.gap, margin + self.gap, window_width, window_height),
+            (margin + window_width + 2 * self.gap, margin + self.gap, window_width, window_height),
+            (margin + self.gap, margin + window_height + 2 * self.gap, window_width, window_height),
+            (margin + window_width + 2 * self.gap, margin + window_height + 2 * self.gap, window_width, window_height)
+        ]
+        
+        # Draw each window
+        for i, (x, y, w, h) in enumerate(windows):
+            # Draw shadow if enabled
+            if self.shadow_enabled:
+                shadow_color = QColor(self.shadow_color)
+                shadow_color.setAlphaF(self.shadow_opacity)
+                painter.setPen(QPen(QColor(Qt.GlobalColor.transparent)))
+                painter.setBrush(QBrush(shadow_color))
+                shadow_rect = (
+                    x + self.shadow_offset_x,
+                    y + self.shadow_offset_y,
+                    w + self.shadow_size,
+                    h + self.shadow_size
+                )
+                painter.drawRoundedRect(*shadow_rect, self.rounding + self.shadow_size, self.rounding + self.shadow_size)
+            
+            # Set up pen for border
+            pen = QPen(self.border_color, self.border_size)
+            painter.setPen(pen)
+            
+            # Window background using theme colors
+            if hasattr(self, 'theme_bg_colors') and self.theme_bg_colors:
+                bg_colors = self.theme_bg_colors
+            else:
+                bg_colors = ["#2e2e3e", "#3e3e4e", "#2a2a3a", "#3a3a4a"]
+            
+            bg_color = QColor(bg_colors[i % len(bg_colors)])
+            
+            # Simulate blur effect by making background more transparent
+            if self.blur_enabled:
+                bg_color.setAlphaF(0.8)
+            
+            painter.setBrush(QBrush(bg_color))
+            
+            # Draw rounded rectangle
+            painter.drawRoundedRect(x, y, w, h, self.rounding, self.rounding)
+            
+            # Simulate animation hint if enabled
+            if self.animation_enabled and i == 0:
+                # Draw a subtle animation indicator on the first window
+                animation_color = QColor(self.border_color)
+                animation_color.setAlphaF(0.4)
+                painter.setPen(QPen(animation_color, 1))
+                painter.setBrush(QBrush(QColor(Qt.GlobalColor.transparent)))
+                # Draw a slightly expanded outline
+                pulse_size = 2
+                expanded_rect = (x - pulse_size, y - pulse_size, w + 2 * pulse_size, h + 2 * pulse_size)
+                painter.drawRoundedRect(*expanded_rect, self.rounding + pulse_size, self.rounding + pulse_size)
+            
+            # Draw window title bar
+            title_height = 25
+            painter.setBrush(QBrush(QColor("#4e4e5e")))
+            painter.setPen(QPen(self.border_color, 1))
+            painter.drawRoundedRect(x + self.border_size, y + self.border_size, 
+                                  w - 2 * self.border_size, title_height, 
+                                  self.rounding // 2, self.rounding // 2)
+            
+            # Draw window controls (close, minimize, maximize)
+            control_size = 12
+            control_y = y + self.border_size + (title_height - control_size) // 2
+            control_spacing = 18
+            
+            # Close button (red)
+            painter.setBrush(QBrush(QColor("#ff5555")))
+            painter.setPen(QPen(QColor("#ff5555"), 1))
+            painter.drawEllipse(x + w - self.border_size - control_spacing, control_y, control_size, control_size)
+            
+            # Maximize button (green)
+            painter.setBrush(QBrush(QColor("#50fa7b")))
+            painter.setPen(QPen(QColor("#50fa7b"), 1))
+            painter.drawEllipse(x + w - self.border_size - 2 * control_spacing, control_y, control_size, control_size)
+            
+            # Minimize button (yellow)
+            painter.setBrush(QBrush(QColor("#f1fa8c")))
+            painter.setPen(QPen(QColor("#f1fa8c"), 1))
+            painter.drawEllipse(x + w - self.border_size - 3 * control_spacing, control_y, control_size, control_size)
+
+
+class InteractiveConfiguratorWidget(QWidget):
+    """Widget containing interactive controls for Hyprland configuration."""
+    
+    # Signals for configuration changes
+    gap_changed = pyqtSignal(int)
+    border_size_changed = pyqtSignal(int)
+    border_color_changed = pyqtSignal(QColor)
+    rounding_changed = pyqtSignal(int)
+    blur_enabled_changed = pyqtSignal(bool)
+    blur_size_changed = pyqtSignal(int)
+    blur_passes_changed = pyqtSignal(int)
+    shadow_enabled_changed = pyqtSignal(bool)
+    shadow_color_changed = pyqtSignal(QColor)
+    shadow_opacity_changed = pyqtSignal(float)
+    shadow_size_changed = pyqtSignal(int)
+    shadow_offset_changed = pyqtSignal(int, int)
+    animation_enabled_changed = pyqtSignal(bool)
+    animation_duration_changed = pyqtSignal(int)
+    apply_requested = pyqtSignal()
+    
+    def __init__(self):
+        super().__init__()
+        self.setup_ui()
+        
+    def setup_ui(self):
+        """Setup the control interface."""
+        layout = QVBoxLayout(self)
+        
+        # Gap control
+        gap_group = QGroupBox("Gap Size")
+        gap_layout = QVBoxLayout(gap_group)
+        
+        self.gap_slider = QSlider(Qt.Orientation.Horizontal)
+        self.gap_slider.setRange(0, 50)
+        self.gap_slider.setValue(10)
+        self.gap_slider.valueChanged.connect(self._on_gap_changed)
+        
+        self.gap_label = QLabel("10px")
+        self.gap_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        gap_layout.addWidget(self.gap_label)
+        gap_layout.addWidget(self.gap_slider)
+        layout.addWidget(gap_group)
+        
+        # Border size control
+        border_group = QGroupBox("Border Size")
+        border_layout = QVBoxLayout(border_group)
+        
+        self.border_slider = QSlider(Qt.Orientation.Horizontal)
+        self.border_slider.setRange(1, 20)
+        self.border_slider.setValue(4)
+        self.border_slider.valueChanged.connect(self._on_border_size_changed)
+        
+        self.border_label = QLabel("4px")
+        self.border_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        border_layout.addWidget(self.border_label)
+        border_layout.addWidget(self.border_slider)
+        layout.addWidget(border_group)
+        
+        # Rounding control
+        rounding_group = QGroupBox("Corner Rounding")
+        rounding_layout = QVBoxLayout(rounding_group)
+        
+        self.rounding_slider = QSlider(Qt.Orientation.Horizontal)
+        self.rounding_slider.setRange(0, 20)
+        self.rounding_slider.setValue(12)
+        self.rounding_slider.valueChanged.connect(self._on_rounding_changed)
+        
+        self.rounding_label = QLabel("12px")
+        self.rounding_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        rounding_layout.addWidget(self.rounding_label)
+        rounding_layout.addWidget(self.rounding_slider)
+        layout.addWidget(rounding_group)
+        
+        # Border color control
+        color_group = QGroupBox("Border Color")
+        color_layout = QVBoxLayout(color_group)
+        
+        self.color_button = QPushButton("Pick Border Color")
+        self.color_button.clicked.connect(self._pick_color)
+        self.color_button.setStyleSheet("QPushButton { background-color: #ff00ff; color: white; font-weight: bold; }")
+        
+        color_layout.addWidget(self.color_button)
+        layout.addWidget(color_group)
+        
+        # Blur effects control
+        blur_group = QGroupBox("Blur Effects")
+        blur_layout = QVBoxLayout(blur_group)
+        
+        self.blur_enabled_checkbox = QCheckBox("Enable Blur")
+        self.blur_enabled_checkbox.setChecked(True)
+        self.blur_enabled_checkbox.toggled.connect(self.blur_enabled_changed.emit)
+        blur_layout.addWidget(self.blur_enabled_checkbox)
+        
+        self.blur_size_slider = QSlider(Qt.Orientation.Horizontal)
+        self.blur_size_slider.setRange(1, 20)
+        self.blur_size_slider.setValue(8)
+        self.blur_size_slider.valueChanged.connect(self._on_blur_size_changed)
+        
+        blur_size_layout = QHBoxLayout()
+        blur_size_layout.addWidget(QLabel("Blur Size:"))
+        self.blur_size_label = QLabel("8px")
+        blur_size_layout.addWidget(self.blur_size_label)
+        blur_layout.addLayout(blur_size_layout)
+        blur_layout.addWidget(self.blur_size_slider)
+        
+        self.blur_passes_slider = QSlider(Qt.Orientation.Horizontal)
+        self.blur_passes_slider.setRange(1, 5)
+        self.blur_passes_slider.setValue(2)
+        self.blur_passes_slider.valueChanged.connect(self._on_blur_passes_changed)
+        
+        blur_passes_layout = QHBoxLayout()
+        blur_passes_layout.addWidget(QLabel("Blur Passes:"))
+        self.blur_passes_label = QLabel("2")
+        blur_passes_layout.addWidget(self.blur_passes_label)
+        blur_layout.addLayout(blur_passes_layout)
+        blur_layout.addWidget(self.blur_passes_slider)
+        
+        layout.addWidget(blur_group)
+        
+        # Shadow effects control
+        shadow_group = QGroupBox("Shadow Effects")
+        shadow_layout = QVBoxLayout(shadow_group)
+        
+        self.shadow_enabled_checkbox = QCheckBox("Enable Shadows")
+        self.shadow_enabled_checkbox.setChecked(True)
+        self.shadow_enabled_checkbox.toggled.connect(self.shadow_enabled_changed.emit)
+        shadow_layout.addWidget(self.shadow_enabled_checkbox)
+        
+        self.shadow_color_button = QPushButton("Shadow Color")
+        self.shadow_color_button.clicked.connect(self._pick_shadow_color)
+        self.shadow_color_button.setStyleSheet("QPushButton { background-color: #000000; color: white; }")
+        shadow_layout.addWidget(self.shadow_color_button)
+        
+        self.shadow_opacity_slider = QSlider(Qt.Orientation.Horizontal)
+        self.shadow_opacity_slider.setRange(10, 100)
+        self.shadow_opacity_slider.setValue(30)
+        self.shadow_opacity_slider.valueChanged.connect(self._on_shadow_opacity_changed)
+        
+        shadow_opacity_layout = QHBoxLayout()
+        shadow_opacity_layout.addWidget(QLabel("Shadow Opacity:"))
+        self.shadow_opacity_label = QLabel("30%")
+        shadow_opacity_layout.addWidget(self.shadow_opacity_label)
+        shadow_layout.addLayout(shadow_opacity_layout)
+        shadow_layout.addWidget(self.shadow_opacity_slider)
+        
+        self.shadow_size_slider = QSlider(Qt.Orientation.Horizontal)
+        self.shadow_size_slider.setRange(1, 20)
+        self.shadow_size_slider.setValue(6)
+        self.shadow_size_slider.valueChanged.connect(self._on_shadow_size_changed)
+        
+        shadow_size_layout = QHBoxLayout()
+        shadow_size_layout.addWidget(QLabel("Shadow Size:"))
+        self.shadow_size_label = QLabel("6px")
+        shadow_size_layout.addWidget(self.shadow_size_label)
+        shadow_layout.addLayout(shadow_size_layout)
+        shadow_layout.addWidget(self.shadow_size_slider)
+        
+        layout.addWidget(shadow_group)
+        
+        # Animation control
+        animation_group = QGroupBox("Animation")
+        animation_layout = QVBoxLayout(animation_group)
+        
+        self.animation_enabled_checkbox = QCheckBox("Enable Animations")
+        self.animation_enabled_checkbox.setChecked(True)
+        self.animation_enabled_checkbox.toggled.connect(self.animation_enabled_changed.emit)
+        animation_layout.addWidget(self.animation_enabled_checkbox)
+        
+        self.animation_duration_slider = QSlider(Qt.Orientation.Horizontal)
+        self.animation_duration_slider.setRange(100, 1000)
+        self.animation_duration_slider.setValue(300)
+        self.animation_duration_slider.valueChanged.connect(self._on_animation_duration_changed)
+        
+        animation_duration_layout = QHBoxLayout()
+        animation_duration_layout.addWidget(QLabel("Duration:"))
+        self.animation_duration_label = QLabel("300ms")
+        animation_duration_layout.addWidget(self.animation_duration_label)
+        animation_layout.addLayout(animation_duration_layout)
+        animation_layout.addWidget(self.animation_duration_slider)
+        
+        layout.addWidget(animation_group)
+        
+        # Presets control
+        presets_group = QGroupBox("Presets")
+        presets_layout = QVBoxLayout(presets_group)
+        
+        presets_label = QLabel("Quick Apply Profiles:")
+        presets_layout.addWidget(presets_label)
+        
+        presets_buttons_layout = QHBoxLayout()
+        
+        self.perf_preset_button = QPushButton("🚀 Performance")
+        self.perf_preset_button.clicked.connect(lambda: self._apply_preset("performance"))
+        self.perf_preset_button.setToolTip("Performance-focused configuration")
+        presets_buttons_layout.addWidget(self.perf_preset_button)
+        
+        self.visual_preset_button = QPushButton("🎨 Visual")
+        self.visual_preset_button.clicked.connect(lambda: self._apply_preset("visual"))
+        self.visual_preset_button.setToolTip("Visual effects focused configuration")
+        presets_buttons_layout.addWidget(self.visual_preset_button)
+        
+        self.battery_preset_button = QPushButton("🔋 Battery")
+        self.battery_preset_button.clicked.connect(lambda: self._apply_preset("battery"))
+        self.battery_preset_button.setToolTip("Battery saving configuration")
+        presets_buttons_layout.addWidget(self.battery_preset_button)
+        
+        self.minimal_preset_button = QPushButton("⚡ Minimal")
+        self.minimal_preset_button.clicked.connect(lambda: self._apply_preset("minimal"))
+        self.minimal_preset_button.setToolTip("Minimal resource configuration")
+        presets_buttons_layout.addWidget(self.minimal_preset_button)
+        
+        presets_layout.addLayout(presets_buttons_layout)
+        layout.addWidget(presets_group)
+        
+        # Apply button
+        self.apply_button = QPushButton("Apply to Hyprland")
+        self.apply_button.clicked.connect(self._on_apply_requested)
+        self.apply_button.setStyleSheet("QPushButton { background-color: #4CAF50; color: white; font-weight: bold; padding: 10px; }")
+        layout.addWidget(self.apply_button)
+        
+        layout.addStretch()
+        
+    def _on_gap_changed(self, value):
+        """Handle gap slider change."""
+        self.gap_label.setText(f"{value}px")
+        self.gap_changed.emit(value)
+        
+    def _on_border_size_changed(self, value):
+        """Handle border size slider change."""
+        self.border_label.setText(f"{value}px")
+        self.border_size_changed.emit(value)
+        
+    def _on_rounding_changed(self, value):
+        """Handle rounding slider change."""
+        self.rounding_label.setText(f"{value}px")
+        self.rounding_changed.emit(value)
+        
+    def _pick_color(self):
+        """Open color picker dialog."""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.color_button.setStyleSheet(f"QPushButton {{ background-color: {color.name()}; color: white; font-weight: bold; }}")
+            self.border_color_changed.emit(color)
+    
+    def _pick_shadow_color(self):
+        """Open shadow color picker dialog."""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.shadow_color_button.setStyleSheet(f"QPushButton {{ background-color: {color.name()}; color: white; }}")
+            self.shadow_color_changed.emit(color)
+    
+    def _on_shadow_opacity_changed(self, value):
+        """Handle shadow opacity slider change."""
+        opacity_percent = value
+        opacity_decimal = value / 100.0
+        self.shadow_opacity_label.setText(f"{opacity_percent}%")
+        self.shadow_opacity_changed.emit(opacity_decimal)
+    
+    def _on_shadow_size_changed(self, value):
+        """Handle shadow size slider change."""
+        self.shadow_size_label.setText(f"{value}px")
+        self.shadow_size_changed.emit(value)
+    
+    def _on_animation_duration_changed(self, value):
+        """Handle animation duration slider change."""
+        self.animation_duration_label.setText(f"{value}ms")
+        self.animation_duration_changed.emit(value)
+    
+    def _on_blur_size_changed(self, value):
+        """Handle blur size slider change."""
+        self.blur_size_label.setText(f"{value}px")
+        self.blur_size_changed.emit(value)
+        
+    def _on_blur_passes_changed(self, value):
+        """Handle blur passes slider change."""
+        self.blur_passes_label.setText(f"{value}")
+        self.blur_passes_changed.emit(value)
+            
+    def _apply_preset(self, preset_type: str):
+        """Apply a preset configuration based on Autoconfig profiles."""
+        presets = {
+            "performance": {
+                "gaps_in": 5,
+                "border_size": 2,
+                "rounding": 8,
+                "blur_enabled": False,
+                "blur_size": 2,
+                "blur_passes": 1,
+                "shadow_enabled": True,
+                "shadow_opacity": 0.2,
+                "shadow_size": 4,
+                "animation_enabled": True,
+                "animation_duration": 200
+            },
+            "visual": {
+                "gaps_in": 12,
+                "border_size": 3,
+                "rounding": 15,
+                "blur_enabled": True,
+                "blur_size": 15,
+                "blur_passes": 3,
+                "shadow_enabled": True,
+                "shadow_opacity": 0.4,
+                "shadow_size": 12,
+                "animation_enabled": True,
+                "animation_duration": 400
+            },
+            "battery": {
+                "gaps_in": 3,
+                "border_size": 1,
+                "rounding": 5,
+                "blur_enabled": False,
+                "blur_size": 1,
+                "blur_passes": 1,
+                "shadow_enabled": False,
+                "shadow_opacity": 0.1,
+                "shadow_size": 2,
+                "animation_enabled": False,
+                "animation_duration": 100
+            },
+            "minimal": {
+                "gaps_in": 2,
+                "border_size": 1,
+                "rounding": 0,
+                "blur_enabled": False,
+                "blur_size": 0,
+                "blur_passes": 1,
+                "shadow_enabled": False,
+                "shadow_opacity": 0.0,
+                "shadow_size": 0,
+                "animation_enabled": False,
+                "animation_duration": 0
+            }
+        }
+        
+        if preset_type in presets:
+            preset = presets[preset_type]
+            
+            # Apply preset values
+            self.gap_slider.setValue(preset["gaps_in"])
+            self.border_slider.setValue(preset["border_size"])
+            self.rounding_slider.setValue(preset["rounding"])
+            
+            self.blur_enabled_checkbox.setChecked(preset["blur_enabled"])
+            self.blur_size_slider.setValue(preset["blur_size"])
+            self.blur_passes_slider.setValue(preset["blur_passes"])
+            
+            self.shadow_enabled_checkbox.setChecked(preset["shadow_enabled"])
+            self.shadow_opacity_slider.setValue(int(preset["shadow_opacity"] * 100))
+            self.shadow_size_slider.setValue(preset["shadow_size"])
+            
+            self.animation_enabled_checkbox.setChecked(preset["animation_enabled"])
+            self.animation_duration_slider.setValue(preset["animation_duration"])
+            
+            # Update labels
+            self.gap_label.setText(f"{preset['gaps_in']}px")
+            self.border_label.setText(f"{preset['border_size']}px")
+            self.rounding_label.setText(f"{preset['rounding']}px")
+            self.blur_size_label.setText(f"{preset['blur_size']}px")
+            self.blur_passes_label.setText(f"{preset['blur_passes']}")
+            self.shadow_opacity_label.setText(f"{int(preset['shadow_opacity'] * 100)}%")
+            self.shadow_size_label.setText(f"{preset['shadow_size']}px")
+            self.animation_duration_label.setText(f"{preset['animation_duration']}ms")
+            
+            # Emit signals to update preview
+            self.gap_changed.emit(preset["gaps_in"])
+            self.border_size_changed.emit(preset["border_size"])
+            self.rounding_changed.emit(preset["rounding"])
+            self.blur_enabled_changed.emit(preset["blur_enabled"])
+            self.blur_size_changed.emit(preset["blur_size"])
+            self.blur_passes_changed.emit(preset["blur_passes"])
+            self.shadow_enabled_changed.emit(preset["shadow_enabled"])
+            self.shadow_opacity_changed.emit(preset["shadow_opacity"])
+            self.shadow_size_changed.emit(preset["shadow_size"])
+            self.animation_enabled_changed.emit(preset["animation_enabled"])
+            self.animation_duration_changed.emit(preset["animation_duration"])
+    
+    def _on_apply_requested(self):
+        """Handle apply button click."""
+        self.apply_requested.emit()
+        
+    def get_current_config(self) -> Dict[str, Any]:
+        """Get current configuration values."""
+        # Extract color from button style sheet
+        style = self.color_button.styleSheet()
+        border_color = "#ff00ff"  # default
+        if "background-color:" in style:
+            import re
+            match = re.search(r'background-color:\s*(#[0-9a-fA-F]{6})', style)
+            if match:
+                border_color = match.group(1)
+        
+        # Extract shadow color from button style sheet
+        shadow_style = self.shadow_color_button.styleSheet()
+        shadow_color = "#000000"  # default
+        if "background-color:" in shadow_style:
+            import re
+            match = re.search(r'background-color:\s*(#[0-9a-fA-F]{6})', shadow_style)
+            if match:
+                shadow_color = match.group(1)
+        
+        return {
+            'general': {
+                'gaps_in': self.gap_slider.value(),
+                'gaps_out': self.gap_slider.value(),
+                'border_size': self.border_slider.value(),
+                'col.active_border': border_color,
+                'col.inactive_border': border_color + "66"
+            },
+            'decoration': {
+                'rounding': self.rounding_slider.value(),
+                'blur': {
+                    'enabled': self.blur_enabled_checkbox.isChecked(),
+                    'size': self.blur_size_slider.value(),
+                    'passes': self.blur_passes_slider.value(),
+                },
+                'drop_shadow': self.shadow_enabled_checkbox.isChecked(),
+                'shadow_color': shadow_color,
+                'shadow_range': self.shadow_size_slider.value(),
+                'shadow_offset': f"0 {self.shadow_size_slider.value()}"
+            },
+            'animations': {
+                'enabled': self.animation_enabled_checkbox.isChecked(),
+                'windows_out': ["windows", 1, int(self.animation_duration_slider.value() / 100), "myBezier"]
+            }
+        }
+        
+    def set_config(self, config: Dict[str, Any]):
+        """Set configuration values."""
+        if 'gaps_in' in config:
+            self.gap_slider.setValue(config['gaps_in'])
+        if 'border_size' in config:
+            self.border_slider.setValue(config['border_size'])
+        if 'rounding' in config:
+            self.rounding_slider.setValue(config['rounding'])
+        if 'border_color' in config:
+            color = QColor(config['border_color'])
+            if color.isValid():
+                self.color_button.setStyleSheet(f"QPushButton {{ background-color: {color.name()}; color: white; font-weight: bold; }}")
 
 
 class PreviewWindow(QWidget):
@@ -186,9 +913,40 @@ class PreviewWindow(QWidget):
         self.content_layout.addWidget(theme_group)
     
     def create_hyprland_preview(self):
-        """Create Hyprland settings preview with live configuration."""
+        """Create Hyprland settings preview with interactive and live configuration."""
         hyprland_group = QGroupBox("Hyprland Configuration Preview")
         hyprland_layout = QVBoxLayout(hyprland_group)
+        
+        # Add tab widget for different preview modes
+        preview_tabs = QTabWidget()
+        
+        # Interactive Preview Tab
+        interactive_tab = QWidget()
+        interactive_layout = QHBoxLayout(interactive_tab)
+        
+        # Create interactive preview and controls
+        self.interactive_preview = InteractivePreviewWidget()
+        self.interactive_controls = InteractiveConfiguratorWidget()
+        
+        # Connect interactive controls to preview
+        self.interactive_controls.gap_changed.connect(self.interactive_preview.set_gap)
+        self.interactive_controls.border_size_changed.connect(self.interactive_preview.set_border_size)
+        self.interactive_controls.border_color_changed.connect(self.interactive_preview.set_border_color)
+        self.interactive_controls.rounding_changed.connect(self.interactive_preview.set_rounding)
+        self.interactive_controls.apply_requested.connect(self.apply_interactive_config)
+        
+        # Load current Hyprland configuration into interactive controls
+        self.load_current_config_to_interactive()
+        
+        # Layout interactive preview
+        interactive_layout.addWidget(self.interactive_controls, 1)
+        interactive_layout.addWidget(self.interactive_preview, 3)
+        
+        preview_tabs.addTab(interactive_tab, "Interactive Preview")
+        
+        # Static Comparison Tab (existing functionality)
+        static_tab = QWidget()
+        static_layout = QVBoxLayout(static_tab)
         
         # Current vs Preview comparison
         comparison_layout = QHBoxLayout()
@@ -261,7 +1019,7 @@ class PreviewWindow(QWidget):
         
         comparison_layout.addWidget(current_group)
         comparison_layout.addWidget(preview_group)
-        hyprland_layout.addLayout(comparison_layout)
+        static_layout.addLayout(comparison_layout)
         
         # Configuration diff
         diff_group = QGroupBox("Configuration Changes")
@@ -281,7 +1039,12 @@ class PreviewWindow(QWidget):
         """)
         diff_layout.addWidget(self.config_diff_text)
         
-        hyprland_layout.addWidget(diff_group)
+        static_layout.addWidget(diff_group)
+        
+        preview_tabs.addTab(static_tab, "Static Comparison")
+        
+        # Add tabs to main layout
+        hyprland_layout.addWidget(preview_tabs)
         
         self.content_layout.addWidget(hyprland_group)
     
@@ -706,6 +1469,134 @@ class PreviewWindow(QWidget):
         except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
             return False
     
+    def apply_interactive_config(self):
+        """Apply interactive configuration to Hyprland."""
+        try:
+            from ..utils import hyprctl
+            import subprocess
+            import os
+            
+            self.status_label.setText("Applying interactive configuration to Hyprland...")
+            self.progress_bar.setVisible(True)
+            self.progress_bar.setRange(0, 100)
+            
+            # Get current configuration from interactive controls
+            config = self.interactive_controls.get_current_config()
+            
+            success_count = 0
+            total_operations = 0
+            applied_commands = []
+            
+            # Apply configuration using hyprctl
+            commands = [
+                ("general:gaps_in", config['gaps_in']),
+                ("general:gaps_out", config['gaps_out']),
+                ("general:border_size", config['border_size']),
+                ("general:col.active_border", config['border_color']),
+                ("decoration:rounding", config['rounding']),
+            ]
+            
+            total_operations = len(commands)
+            
+            for i, (option, value) in enumerate(commands):
+                try:
+                    # Apply the setting
+                    returncode, stdout, stderr = hyprctl(f"keyword {option} {value}")
+                    
+                    if returncode == 0:
+                        success_count += 1
+                        applied_commands.append(f"✓ {option} = {value}")
+                    else:
+                        applied_commands.append(f"✗ {option} = {value} (failed: {stderr})")
+                    
+                    # Update progress
+                    progress = int((i + 1) / total_operations * 100)
+                    self.progress_bar.setValue(progress)
+                    
+                except Exception as e:
+                    applied_commands.append(f"✗ {option} = {value} (error: {str(e)})")
+            
+            # Write configuration to file for persistence
+            try:
+                hypr_config_dir = os.path.expanduser("~/.config/hypr/conf.d")
+                os.makedirs(hypr_config_dir, exist_ok=True)
+                
+                config_file = os.path.join(hypr_config_dir, "hyprrice_interactive.conf")
+                with open(config_file, 'w') as f:
+                    f.write("# HyprRice Interactive Configuration\n")
+                    f.write("# Generated automatically - do not edit manually\n\n")
+                    f.write("general {\n")
+                    f.write(f"    gaps_in = {config['gaps_in']}\n")
+                    f.write(f"    gaps_out = {config['gaps_out']}\n")
+                    f.write(f"    border_size = {config['border_size']}\n")
+                    f.write(f"    col.active_border = {config['border_color']}\n")
+                    f.write("}\n\n")
+                    f.write("decoration {\n")
+                    f.write(f"    rounding = {config['rounding']}\n")
+                    f.write("}\n")
+                
+                applied_commands.append(f"✓ Configuration saved to {config_file}")
+                
+            except Exception as e:
+                applied_commands.append(f"✗ Failed to save config file: {str(e)}")
+            
+            self.progress_bar.setValue(100)
+            
+            # Show result
+            if success_count == total_operations:
+                self.status_label.setText("✅ Interactive configuration applied successfully!")
+                self.config_applied.emit("success")
+                
+                # Update the static preview to reflect applied changes
+                self.update_preview()
+                
+            elif success_count > 0:
+                self.status_label.setText(f"⚠️ {success_count}/{total_operations} settings applied")
+                self.config_applied.emit("partial")
+            else:
+                self.status_label.setText("❌ Failed to apply interactive configuration")
+                self.config_applied.emit("failed")
+            
+            # Show detailed results in the diff text area
+            result_text = "Interactive Configuration Applied:\n" + "\n".join(applied_commands)
+            if hasattr(self, 'config_diff_text'):
+                self.config_diff_text.setPlainText(result_text)
+            
+        except Exception as e:
+            self.progress_bar.setVisible(False)
+            self.status_label.setText(f"❌ Error applying interactive configuration: {str(e)}")
+            self.config_applied.emit("error")
+            self.logger.error(f"Error applying interactive config: {e}")
+        
+        finally:
+            # Hide progress bar after a short delay
+            QTimer.singleShot(2000, lambda: self.progress_bar.setVisible(False))
+
+    def load_current_config_to_interactive(self):
+        """Load current Hyprland configuration into interactive controls."""
+        try:
+            current_config = self.get_current_hyprland_config()
+            if current_config:
+                # Set interactive controls to current values
+                self.interactive_controls.set_config(current_config)
+                
+                # Update preview widget with current values
+                self.interactive_preview.set_gap(current_config.get('gaps_in', 10))
+                self.interactive_preview.set_border_size(current_config.get('border_size', 4))
+                self.interactive_preview.set_rounding(current_config.get('rounding', 12))
+                
+                # Set border color
+                border_color_str = current_config.get('border_color', '#ff00ff')
+                if border_color_str.startswith('rgba') or border_color_str.startswith('rgb'):
+                    # Convert rgba/rgb to hex (simplified)
+                    border_color_str = '#5e81ac'  # fallback
+                border_color = QColor(border_color_str)
+                if border_color.isValid():
+                    self.interactive_preview.set_border_color(border_color)
+                
+        except Exception as e:
+            self.logger.error(f"Error loading current config to interactive: {e}")
+
     def apply_to_hyprland(self):
         """Apply current configuration to Hyprland using hyprctl."""
         try:

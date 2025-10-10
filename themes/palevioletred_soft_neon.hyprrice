@@ -1,0 +1,125 @@
+name: PaleVioletRed Soft Neon
+description: A soft neon theme with PaleVioletRed colors, glow effects, and modern plugins
+author: HyprRice Team
+version: 1.0.0
+tags:
+  - palevioletred
+  - neon
+  - soft
+  - glow
+  - hyprbars
+  - hyprexpo
+  - blur
+
+colors:
+  primary: "#dda0dd"
+  secondary: "#ff69b4"
+  accent: "#da70d6"
+  text: "#ffffff"
+  background: "#1a1a1a"
+  surface: "#2a2a2a"
+
+hyprland:
+  border_color: "#dda0dd"
+  gaps_in: 6
+  gaps_out: 12
+  blur_enabled: true
+  blur_size: 8
+  blur_passes: 2
+  animation_duration: 0.4
+  animation_curve: "ease-out"
+  
+  # Hyprbars (titlebars + buttons)
+  hyprbars_enabled: true
+  hyprbars_height: 32
+  hyprbars_buttons_size: 14
+  hyprbars_buttons_gap: 8
+  hyprbars_buttons_color: "#dda0dd"
+  hyprbars_buttons_hover_color: "#ff69b4"
+  hyprbars_title_color: "#ffffff"
+  hyprbars_title_font: "JetBrainsMono Nerd Font"
+  hyprbars_title_size: 12
+  
+  # Hyprexpo (exposure / effects plugin)
+  hyprexpo_enabled: true
+  hyprexpo_workspace_method: "first 1"
+  hyprexpo_workspace_gaps: 8
+  hyprexpo_workspace_rounding: 8
+  hyprexpo_workspace_shadow: true
+  hyprexpo_workspace_shadow_color: "#dda0dd"
+  hyprexpo_workspace_shadow_size: 6
+  hyprexpo_workspace_shadow_offset: "0 4"
+  
+  # Glow via shadows
+  glow_enabled: true
+  glow_color: "#dda0dd"
+  glow_size: 12
+  glow_offset: "0 0"
+  glow_opacity: 0.8
+  glow_blur: 6
+  
+  # Blur shaders
+  blur_shaders_enabled: true
+  blur_shader_type: "kawase"
+  blur_shader_passes: 3
+  blur_shader_size: 4
+  blur_shader_noise: 0.0
+  blur_shader_contrast: 1.0
+  blur_shader_brightness: 0.0
+  blur_shader_vibrancy: 0.2
+  blur_shader_vibrancy_darkness: 0.1
+
+waybar:
+  background_color: "rgba(26, 26, 26, 0.8)"
+  text_color: "#ffffff"
+  border_color: "#dda0dd"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 13
+  modules:
+    - "clock"
+    - "battery"
+    - "network"
+    - "cpu"
+    - "memory"
+    - "tray"
+
+rofi:
+  theme: "palevioletred"
+  background_color: "#1a1a1a"
+  text_color: "#ffffff"
+  border_color: "#dda0dd"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 14
+
+notifications:
+  background_color: "#1a1a1a"
+  text_color: "#ffffff"
+  border_color: "#dda0dd"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 12
+
+clipboard:
+  manager: "cliphist"
+  history_size: 100
+  auto_sync: true
+  sync_interval: 30
+  include_images: true
+  include_text: true
+  include_files: true
+
+lockscreen:
+  background: "~/.config/hyprlock/background.jpg"
+  timeout: 300
+  grace_period: 5
+  fade_in: true
+  fade_out: true
+  fade_time: 0.5
+  show_clock: true
+  clock_format: "%H:%M:%S"
+  show_date: true
+  date_format: "%Y-%m-%d"
+  font_family: "JetBrainsMono Nerd Font"
+  font_size: 24
+  text_color: "#ffffff"
+  background_color: "#1a1a1a"
+  border_color: "#dda0dd"

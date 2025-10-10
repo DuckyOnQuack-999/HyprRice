@@ -63,11 +63,54 @@ class HyprlandConfig:
     blur_size: int = 8
     blur_passes: int = 1
     
+    # Hyprbars (titlebars + buttons)
+    hyprbars_enabled: bool = False
+    hyprbars_height: int = 30
+    hyprbars_buttons_size: int = 12
+    hyprbars_buttons_gap: int = 8
+    hyprbars_buttons_color: str = "#ffffff"
+    hyprbars_buttons_hover_color: str = "#ff6b6b"
+    hyprbars_title_color: str = "#ffffff"
+    hyprbars_title_font: str = "JetBrainsMono Nerd Font"
+    hyprbars_title_size: int = 12
+    
+    # Hyprexpo (exposure / effects plugin)
+    hyprexpo_enabled: bool = False
+    hyprexpo_workspace_method: str = "first 1"  # first 1, all, or specific workspace
+    hyprexpo_workspace_gaps: int = 5
+    hyprexpo_workspace_rounding: int = 5
+    hyprexpo_workspace_shadow: bool = True
+    hyprexpo_workspace_shadow_color: str = "#000000"
+    hyprexpo_workspace_shadow_size: int = 4
+    hyprexpo_workspace_shadow_offset: str = "0 4"
+    
+    # Glow via shadows
+    glow_enabled: bool = False
+    glow_color: str = "#ff6b6b"
+    glow_size: int = 8
+    glow_offset: str = "0 0"
+    glow_opacity: float = 0.8
+    glow_blur: int = 4
+    
+    # Blur shaders
+    blur_shaders_enabled: bool = False
+    blur_shader_type: str = "kawase"  # kawase, gaussian, or custom
+    blur_shader_passes: int = 3
+    blur_shader_size: int = 4
+    blur_shader_noise: float = 0.0
+    blur_shader_contrast: float = 1.0
+    blur_shader_brightness: float = 0.0
+    blur_shader_vibrancy: float = 0.0
+    blur_shader_vibrancy_darkness: float = 0.0
+    
     # Sourced configuration files
     sourced_files: list = field(default_factory=lambda: [
         "~/.config/hypr/rules.conf",
         "~/.config/hypr/workspace.conf",
-        "~/.config/hypr/exec.conf"
+        "~/.config/hypr/exec.conf",
+        "~/.config/hypr/colors.conf",
+        "~/.config/hypr/general.conf",
+        "~/.config/hypr/plugins.conf"
     ])
 
 

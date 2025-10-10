@@ -594,8 +594,131 @@ class ConfigEditor(QDialog):
     
     def _find_text(self):
         """Open find dialog."""
-        # TODO: Implement find/replace functionality
-        QMessageBox.information(self, "Find", "Find functionality will be implemented in a future version.")
+        editor = self._get_current_editor()
+        if not editor:
+            QMessageBox.warning(self, "Find", "No editor is currently active.")
+            return
+        
+        # Create find dialog
+        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QCheckBox, QLabel
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Find")
+        dialog.setModal(True)
+        dialog.resize(400, 150)
+        
+        layout = QVBoxLayout(dialog)
+        
+        # Find text input
+        find_layout = QHBoxLayout()
+        find_layout.addWidget(QLabel("Find:"))
+        find_input = QLineEdit()
+        find_input.setPlaceholderText("Enter text to find...")
+        find_layout.addWidget(find_input)
+        layout.addLayout(find_layout)
+        
+        # Replace text input
+        replace_layout = QHBoxLayout()
+        replace_layout.addWidget(QLabel("Replace:"))
+        replace_input = QLineEdit()
+        replace_input.setPlaceholderText("Enter replacement text...")
+        replace_layout.addWidget(replace_input)
+        layout.addLayout(replace_layout)
+        
+        # Options
+        options_layout = QHBoxLayout()
+        case_sensitive = QCheckBox("Case sensitive")
+        whole_words = QCheckBox("Whole words only")
+        options_layout.addWidget(case_sensitive)
+        options_layout.addWidget(whole_words)
+        options_layout.addStretch()
+        layout.addLayout(options_layout)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        find_btn = QPushButton("Find")
+        replace_btn = QPushButton("Replace")
+        replace_all_btn = QPushButton("Replace All")
+        close_btn = QPushButton("Close")
+        
+        button_layout.addWidget(find_btn)
+        button_layout.addWidget(replace_btn)
+        button_layout.addWidget(replace_all_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(close_btn)
+        layout.addLayout(button_layout)
+        
+        # Connect signals
+        def find_text():
+            text = find_input.text()
+            if not text:
+                return
+            
+            # Get current editor content
+            content = editor.toPlainText()
+            search_text = text if not case_sensitive.isChecked() else text
+            
+            # Find text
+            if case_sensitive.isChecked():
+                pos = content.find(search_text, editor.textCursor().position())
+            else:
+                pos = content.lower().find(search_text.lower(), editor.textCursor().position())
+            
+            if pos != -1:
+                # Select found text
+                cursor = editor.textCursor()
+                cursor.setPosition(pos)
+                cursor.setPosition(pos + len(text), cursor.KeepAnchor)
+                editor.setTextCursor(cursor)
+                editor.setFocus()
+            else:
+                QMessageBox.information(dialog, "Find", f"Text '{text}' not found.")
+        
+        def replace_text():
+            find_text_val = find_input.text()
+            replace_text_val = replace_input.text()
+            
+            if not find_text_val:
+                return
+            
+            cursor = editor.textCursor()
+            if cursor.hasSelection() and cursor.selectedText() == find_text_val:
+                cursor.insertText(replace_text_val)
+                editor.setTextCursor(cursor)
+            else:
+                find_text()
+        
+        def replace_all():
+            find_text_val = find_input.text()
+            replace_text_val = replace_input.text()
+            
+            if not find_text_val:
+                return
+            
+            content = editor.toPlainText()
+            if case_sensitive.isChecked():
+                new_content = content.replace(find_text_val, replace_text_val)
+            else:
+                # Case-insensitive replace
+                import re
+                new_content = re.sub(re.escape(find_text_val), replace_text_val, content, flags=re.IGNORECASE)
+            
+            if new_content != content:
+                editor.setPlainText(new_content)
+                QMessageBox.information(dialog, "Replace All", f"Replaced all occurrences of '{find_text_val}'.")
+            else:
+                QMessageBox.information(dialog, "Replace All", f"No occurrences of '{find_text_val}' found.")
+        
+        find_btn.clicked.connect(find_text)
+        replace_btn.clicked.connect(replace_text)
+        replace_all_btn.clicked.connect(replace_all)
+        close_btn.clicked.connect(dialog.accept)
+        
+        # Set focus to find input
+        find_input.setFocus()
+        
+        # Show dialog
+        dialog.exec()
     
     def _validate_config(self):
         """Validate the current configuration."""

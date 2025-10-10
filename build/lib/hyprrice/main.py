@@ -32,7 +32,13 @@ Examples:
     parser.add_argument(
         "--debug",
         action="store_true",
-        help="Enable debug logging"
+        help="Enable debug logging and UI tracing"
+    )
+    
+    parser.add_argument(
+        "--trace-ui",
+        action="store_true",
+        help="Enable UI rendering trace (layout passes, repaints)"
     )
     
     parser.add_argument(
@@ -132,12 +138,21 @@ def main() -> int:
         
         # Create Qt application and GUI window
         from PyQt6.QtWidgets import QApplication
+        from PyQt6.QtCore import Qt
         from .main_gui import HyprRiceGUI
         
         app = QApplication(sys.argv)
         app.setApplicationName("HyprRice")
         app.setApplicationVersion("1.0.0")
         app.setOrganizationName("HyprRice")
+        
+        # Set Wayland-safe attributes (PyQt6 handles DPI scaling automatically)
+        # Note: PyQt6 doesn't have AA_EnableHighDpiScaling and AA_UseHighDpiPixmaps
+        # DPI scaling is handled automatically in PyQt6
+        
+        # Enable UI tracing if requested
+        if args.debug or args.trace_ui or os.getenv('HYPRRICE_TRACE_UI'):
+            os.environ['HYPRRICE_TRACE_UI'] = '1'
         
         # Set application style
         if args.theme != "auto":

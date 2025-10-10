@@ -125,6 +125,11 @@ class EnhancedPluginManager:
         self._load_plugin_configs()
         self._discover_plugins()
         
+    def discover_plugins(self) -> List[str]:
+        """Discover all available plugins and return their names."""
+        self._discover_plugins()
+        return list(self.available_plugins.keys())
+    
     def _discover_plugins(self):
         """Discover all available plugins."""
         # Discover user plugins
